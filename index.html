@@ -387,7 +387,7 @@
             Sorteio por posição.<br/>Mercado livre entre amigos.
           </h1>
           <p class="text-sm sm:text-base opacity-85 max-w-xl leading-relaxed">
-            Coloque seu nome, entre na sala com a galera, negocie trocas 2 por 1 pelos craques e dispute a taça nos botões 2D.
+            Coloque seu nome, crie uma sala online com os amigos ou jogue contra a CPU, faça trocas livres sem limite de jogadores e dispute a taça nos botões 2D.
           </p>
         </div>
 
@@ -401,9 +401,14 @@
             <input type="text" id="my-nick-input" maxlength="20" placeholder="Ex: Gustavo" class="w-full rounded-lg px-3.5 py-2.5 text-sm font-bold bg-white text-[#141A16] border border-[#CBD5CF]" />
           </div>
 
-          <button type="button" data-action="go-create-setup" class="btn-primary w-full py-3 px-4 text-sm">
-            Criar uma sala (Host)
-          </button>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button type="button" data-action="go-create-setup" class="btn-primary w-full py-3 px-3 text-sm">
+              Criar sala online
+            </button>
+            <button type="button" data-action="go-cpu-setup" class="btn-secondary w-full py-3 px-3 text-sm">
+              Jogar contra CPU
+            </button>
+          </div>
 
           <div class="pt-2 border-t border-[#E3E8E5] space-y-2">
             <label for="join-code-input" class="block text-xs font-bold text-[#637067]">Ou entrar com código de convite</label>
@@ -433,8 +438,8 @@
           <p class="text-xs leading-relaxed" style="color: var(--muted);">Cada amigo entra com seu nome e dá pronto. O host gira a roleta posição por posição para montar os elencos de 15 atletas.</p>
         </div>
         <div class="space-y-1">
-          <div class="text-xs font-extrabold" style="color: #16A34A;">2 • Mercado online</div>
-          <p class="text-xs leading-relaxed" style="color: var(--muted);">Escale seus 11 titulares, marque quem está disponível ou intocável e mande propostas 1x1, 2x1 ou 3x1 em tempo real.</p>
+          <div class="text-xs font-extrabold" style="color: #16A34A;">2 • Mercado livre</div>
+          <p class="text-xs leading-relaxed" style="color: var(--muted);">Escale seus 11 titulares, marque quem está disponível ou intocável e envie propostas ou contrapropostas livres com quantos atletas quiser.</p>
         </div>
         <div class="space-y-1">
           <div class="text-xs font-extrabold" style="color: #16A34A;">3 • Taça nos botões 2D</div>
@@ -448,15 +453,33 @@
     <!-- =================================================================== -->
     <section id="screen-create" class="hidden space-y-6">
       <div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight" style="letter-spacing:-0.03em;">Configure a sala</h1>
-        <p class="text-sm mt-1" style="color: var(--muted);">Você será o host. Defina as regras e abra o link/código para seus amigos entrarem.</p>
+        <h1 id="create-screen-title" class="text-2xl sm:text-3xl font-extrabold tracking-tight" style="letter-spacing:-0.03em;">Configure a sala</h1>
+        <p id="create-screen-sub" class="text-sm mt-1" style="color: var(--muted);">Você será o host. Defina as regras e abra o link/código para seus amigos entrarem.</p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <div class="lg:col-span-7 space-y-6">
-          <div class="space-y-1.5">
+          <div id="create-room-title-wrap" class="space-y-1.5">
             <label for="room-title-input" class="block text-sm font-bold">Nome da sala</label>
             <input type="text" id="room-title-input" maxlength="28" value="Resenha Fifoot" class="w-full rounded-xl px-3.5 py-2.5 text-sm font-semibold" />
+          </div>
+
+          <div id="create-cpu-count-wrap" class="hidden space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="block text-sm font-bold">Adversários CPU na copa</label>
+              <span id="create-cpu-total-label" class="text-xs font-semibold" style="color: var(--muted);">4 times no total</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" data-action="set-cpu-count" data-val="3" id="cpu-cnt-3" class="btn-secondary px-3 py-2 text-xs">3 CPUs</button>
+              <button type="button" data-action="set-cpu-count" data-val="5" id="cpu-cnt-5" class="btn-secondary px-3 py-2 text-xs">5 CPUs</button>
+              <button type="button" data-action="set-cpu-count" data-val="7" id="cpu-cnt-7" class="btn-secondary px-3 py-2 text-xs">7 CPUs</button>
+              <button type="button" data-action="set-cpu-count" data-val="11" id="cpu-cnt-11" class="btn-secondary px-3 py-2 text-xs">11 CPUs</button>
+              <div class="inline-flex items-center gap-1.5 ml-auto">
+                <button type="button" data-action="step-cpu-count" data-delta="-1" class="btn-secondary w-8 h-8 flex items-center justify-center text-sm">−</button>
+                <span id="create-cpu-count-num" class="text-sm font-extrabold w-7 text-center">3</span>
+                <button type="button" data-action="step-cpu-count" data-delta="1" class="btn-secondary w-8 h-8 flex items-center justify-center text-sm">+</button>
+              </div>
+            </div>
           </div>
 
           <div class="space-y-2">
@@ -515,7 +538,7 @@
               </div>
             </div>
 
-            <div class="space-y-2">
+            <div id="create-privacy-wrap" class="space-y-2">
               <label class="block text-sm font-bold">Acesso à sala</label>
               <div class="seg-track">
                 <button type="button" data-action="cfg-rule" data-key="privacy" data-val="PUBLIC" id="cfg-priv-PUBLIC" class="seg-pill active">Pública</button>
@@ -540,7 +563,7 @@
               <div class="flex justify-between"><dt class="opacity-75">Avanço de fases</dt><dd class="font-bold">Todos dão pronto</dd></div>
             </dl>
             <div class="pt-2 space-y-2">
-              <button type="button" data-action="confirm-open-room" class="btn-primary w-full py-3 px-4 text-sm">
+              <button type="button" id="btn-confirm-open-room" data-action="confirm-open-room" class="btn-primary w-full py-3 px-4 text-sm">
                 Abrir sala e gerar código
               </button>
               <button type="button" data-action="leave-room" class="w-full py-2 text-xs font-bold opacity-75 hover:opacity-100">
@@ -566,11 +589,8 @@
                 <p class="text-xs mt-0.5" style="color: var(--muted);">Cada jogador entra com seu nome e confirma o pronto para o host iniciar.</p>
               </div>
               <div id="lobby-host-tools" class="flex flex-wrap items-center gap-1.5">
-                <button type="button" data-action="sim-friend-join" class="btn-secondary px-3 py-1.5 text-xs" title="Simula um amigo entrando online com código para testar no preview">
-                  + Simular amigo entrando
-                </button>
                 <button type="button" data-action="add-bot-to-room" class="btn-secondary px-3 py-1.5 text-xs">
-                  + Adicionar bot
+                  + Adicionar bot (CPU)
                 </button>
               </div>
             </div>
@@ -784,8 +804,13 @@
             </div>
           </div>
 
-          <!-- Tab 1: Propose Swap (1x1, 2x1, 3x1) -->
+          <!-- Tab 1: Free Swap & Counteroffer (Unlimited players each side) -->
           <div id="mpanel-PROPOSE" class="space-y-4">
+            <div id="counter-banner" class="hidden p-3 rounded-xl border flex items-center justify-between gap-2 text-xs" style="background: var(--mint); border-color: var(--mint-border);">
+              <span id="counter-banner-text" class="font-bold">Montando contraproposta livre</span>
+              <button type="button" data-action="cancel-counter-edit" class="underline font-bold shrink-0">Cancelar edição</button>
+            </div>
+
             <div class="flex items-center justify-between gap-2 p-3 rounded-xl" style="background: var(--soft);">
               <span class="text-xs font-semibold">Negociar com</span>
               <select id="partner-select" class="rounded-lg px-3 py-1.5 text-xs sm:text-sm font-bold min-w-[180px]"></select>
@@ -793,22 +818,22 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div class="space-y-1.5">
-                <div class="text-xs font-bold">Você envia <span id="send-cnt" class="font-normal" style="color:var(--muted);">(0/3)</span></div>
+                <div class="text-xs font-bold">Você envia <span id="send-cnt" class="font-normal" style="color:var(--muted);">(0)</span></div>
                 <div id="propose-my-list" class="space-y-1.5 max-h-72 overflow-y-auto pr-1"></div>
               </div>
               <div class="space-y-1.5">
-                <div class="text-xs font-bold">Você pede <span id="ask-cnt" class="font-normal" style="color:var(--muted);">(0/3)</span></div>
+                <div class="text-xs font-bold">Você pede <span id="ask-cnt" class="font-normal" style="color:var(--muted);">(0)</span></div>
                 <div id="propose-their-list" class="space-y-1.5 max-h-72 overflow-y-auto pr-1"></div>
               </div>
             </div>
 
             <div class="pt-2 border-t flex flex-wrap items-center justify-between gap-3" style="border-color: var(--line);">
               <div id="propose-hint" class="text-xs font-medium" style="color: var(--muted);">
-                Escolha de 1 a 3 atletas de cada lado para enviar oferta online.
+                Troca livre: oferte quantos jogadores quiser por quem quiser.
               </div>
               <div class="flex items-center gap-2">
                 <button type="button" data-action="clear-offer" class="btn-secondary px-3 py-2 text-xs">Limpar</button>
-                <button type="button" data-action="send-trade-offer" class="btn-primary px-4 py-2 text-xs sm:text-sm">Enviar proposta</button>
+                <button type="button" id="btn-send-trade-offer" data-action="send-trade-offer" class="btn-primary px-4 py-2 text-xs sm:text-sm">Enviar proposta</button>
               </div>
             </div>
           </div>
@@ -953,15 +978,20 @@
   <div id="toast-stack" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-xs pointer-events-none"></div>
 
   <script>
-    // Auto-detects Official Node.js Server (/health) vs Static Hosting (WebRTC PeerJS)
+    // Resilient Official Server WebSocket Adapter (Outbox + Backoff + visibilitychange + Host Reconnect)
     (function () {
       if (!window.location || !/^https?:/i.test(window.location.protocol)) return;
 
       let ws = null;
       let connected = false;
+      let serverConfirmed = false;
+      let reconnectDelay = 1000;
+      let reconnectTimer = null;
       let pendingJoinNotFound = null;
       let activeCode = null;
       let isHostRole = false;
+      const outbox = [];
+      const MAX_OUTBOX = 32;
 
       async function fetchGlobalRooms() {
         try {
@@ -975,25 +1005,79 @@
         } catch (e) {}
       }
 
-      function sendJson(obj) {
+      function enqueueAndSend(obj, queueIfOffline) {
         if (ws && connected && ws.readyState === 1) {
-          ws.send(JSON.stringify(obj));
+          try {
+            ws.send(JSON.stringify(obj));
+            return;
+          } catch (e) {}
+        }
+        if (queueIfOffline) {
+          if (outbox.length >= MAX_OUTBOX) outbox.shift();
+          outbox.push(obj);
         }
       }
 
+      function flushOutbox() {
+        while (outbox.length > 0 && ws && connected && ws.readyState === 1) {
+          const item = outbox.shift();
+          try { ws.send(JSON.stringify(item)); } catch (e) { break; }
+        }
+      }
+
+      function scheduleReconnect() {
+        if (reconnectTimer) return;
+        reconnectTimer = setTimeout(function () {
+          reconnectTimer = null;
+          connectSocket();
+        }, reconnectDelay);
+        reconnectDelay = Math.min(8000, reconnectDelay * 2);
+      }
+
       function connectSocket() {
+        if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
         const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         try {
           ws = new WebSocket(proto + '//' + window.location.host + '/ws');
         } catch (e) {
+          scheduleReconnect();
           return;
         }
 
         ws.onopen = function () {
           connected = true;
+          reconnectDelay = 1000;
           if (typeof OnlineNet !== 'undefined') {
             OnlineNet.setBadge('SERVER', 'Servidor Oficial Online');
           }
+          // Automatic Re-sync if already inside an active online room!
+          if (typeof room !== 'undefined' && room && !room.isCpuMode && typeof Client !== 'undefined') {
+            activeCode = room.code;
+            isHostRole = (room.hostId === Client.id);
+            if (isHostRole) {
+              enqueueAndSend({
+                type: 'HOST_RECONNECT',
+                code: room.code,
+                clientId: Client.id,
+                room: room
+              }, false);
+            } else {
+              enqueueAndSend({
+                type: 'CLIENT_JOIN_ROOM',
+                code: room.code,
+                clientId: Client.id,
+                packet: {
+                  type: 'GUEST_JOIN',
+                  code: room.code,
+                  clientId: Client.id,
+                  name: Client.name,
+                  clubBr: Client.clubBr,
+                  clubEu: Client.clubEu
+                }
+              }, false);
+            }
+          }
+          flushOutbox();
           fetchGlobalRooms();
         };
 
@@ -1038,24 +1122,37 @@
 
         ws.onclose = function () {
           connected = false;
-          setTimeout(connectSocket, 3000);
+          if (typeof OnlineNet !== 'undefined' && serverConfirmed) {
+            OnlineNet.setBadge('CONNECTING', 'Reconectando...');
+          }
+          if (serverConfirmed) scheduleReconnect();
         };
 
         ws.onerror = function () {};
       }
+
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible' && serverConfirmed) {
+          if (!connected || !ws || ws.readyState !== 1) {
+            reconnectDelay = 1000;
+            if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+            connectSocket();
+          }
+        }
+      });
 
       window.FIFOOT_WS_ADAPTER = {
         isConnected: function () { return connected; },
         hostRoom: function (code, roomSnapshot) {
           activeCode = code;
           isHostRole = true;
-          sendJson({ type: 'HOST_CREATE_ROOM', code: code, clientId: roomSnapshot.hostId, room: roomSnapshot });
+          enqueueAndSend({ type: 'HOST_CREATE_ROOM', code: code, clientId: roomSnapshot.hostId, room: roomSnapshot }, true);
         },
         joinRoom: function (code, joinInfo, onNotFound) {
           activeCode = code;
           isHostRole = false;
           pendingJoinNotFound = onNotFound || null;
-          sendJson({
+          enqueueAndSend({
             type: 'CLIENT_JOIN_ROOM',
             code: code,
             clientId: joinInfo.clientId,
@@ -1067,32 +1164,41 @@
               clubBr: joinInfo.clubBr,
               clubEu: joinInfo.clubEu
             }
-          });
+          }, true);
         },
         broadcastFromHost: function (code, packet, roomSnapshot) {
-          sendJson({ type: 'HOST_BROADCAST', code: code, packet: packet, room: roomSnapshot || null });
+          enqueueAndSend({ type: 'HOST_BROADCAST', code: code, packet: packet, room: roomSnapshot || null }, true);
         },
         sendToHost: function (code, packet) {
-          sendJson({ type: 'CLIENT_TO_HOST', code: code, packet: packet });
+          enqueueAndSend({ type: 'CLIENT_TO_HOST', code: code, packet: packet }, true);
         },
         leaveRoom: function () {
-          if (activeCode) sendJson({ type: 'LEAVE_ROOM', code: activeCode });
+          if (activeCode) enqueueAndSend({ type: 'LEAVE_ROOM', code: activeCode }, false);
           activeCode = null;
           isHostRole = false;
           pendingJoinNotFound = null;
+          outbox.length = 0;
         }
       };
 
-      // Probe /health once: only activate dedicated WS server mode when server.js is present!
+      // Probe /health with cold-start feedback for Render Free Tier
+      let wakeTimer = setTimeout(function () {
+        if (!serverConfirmed && typeof OnlineNet !== 'undefined') {
+          OnlineNet.setBadge('CONNECTING', 'Acordando servidor...');
+        }
+      }, 2400);
+
       fetch('/health', { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (d) {
+          clearTimeout(wakeTimer);
           if (d && d.ok === true) {
+            serverConfirmed = true;
             connectSocket();
-            setInterval(fetchGlobalRooms, 10000);
+            setInterval(fetchGlobalRooms, 15000);
           }
         })
-        .catch(function () {});
+        .catch(function () { clearTimeout(wakeTimer); });
     })();
   </script>
   <script>
@@ -1641,36 +1747,7 @@
       });
     }
 
-    const SAMPLE_PUBLIC_ROOMS = [
-      {
-        code: 'FIFO-2910',
-        title: 'Resenha de Terça',
-        universe: 'BRASIL',
-        format: 'GROUPS_KNOCKOUT',
-        drawMode: 'BALANCED',
-        hostName: 'Pedro',
-        hostClubId: 'fla',
-        peers: [
-          { name: 'Pedro', clubId: 'fla', kind: 'PEER', isHost: true },
-          { name: 'Lucas', clubId: 'pal', kind: 'PEER', isHost: false },
-          { name: 'Matheus', clubId: 'cor', kind: 'PEER', isHost: false }
-        ]
-      },
-      {
-        code: 'FIFO-8405',
-        title: 'Champions da Galera',
-        universe: 'EUROPA',
-        format: 'KNOCKOUT',
-        drawMode: 'BALANCED',
-        hostName: 'Rafa',
-        hostClubId: 'rma',
-        peers: [
-          { name: 'Rafa', clubId: 'rma', kind: 'PEER', isHost: true },
-          { name: 'Gabriel', clubId: 'fcb', kind: 'PEER', isHost: false },
-          { name: 'Thiago', clubId: 'mci', kind: 'PEER', isHost: false }
-        ]
-      }
-    ];
+    // Salas públicas vêm exclusivamente de salas reais criadas por jogadores.
 
     const ROOM_REGISTRY_KEY = 'fifoot_online_rooms_v4';
     const PROFILE_KEY = 'fifoot_my_profile_v4';
@@ -1740,6 +1817,8 @@
       dark: false,
       screen: 'home', // 'home' | 'create' | 'lobby' | 'draft' | 'market' | 'tourney'
       createForm: {
+        mode: 'ONLINE', // 'ONLINE' | 'CPU'
+        cpuCount: 3,
         title: 'Resenha Fifoot',
         universe: 'BRASIL',
         format: 'GROUPS_KNOCKOUT',
@@ -1752,6 +1831,7 @@
         partnerId: null,
         sendUids: [],
         askUids: [],
+        counterOfferId: null,
         fastSpin: false
       }
     };
@@ -2174,11 +2254,39 @@
           return;
         }
 
+        if (data.type === 'HOST_TEMPORARILY_OFFLINE') {
+          this.setBadge('CONNECTING', 'Host reconectando...');
+          toast('O host oscilou a conexão. Aguardando até 45s para ele voltar...');
+          return;
+        }
+
+        if (data.type === 'HOST_RECONNECTED') {
+          this.setBadge('SERVER', 'Conectado na Sala');
+          toast('O host reconectou na sala!');
+          return;
+        }
+
+        if (data.type === 'ROOM_CLOSED') {
+          MatchEngine.stop();
+          RouletteAnim.stop();
+          this.cleanupConnections();
+          room = null;
+          Client.screen = 'home';
+          this.probeReadiness();
+          render();
+          toast(data.reason || 'A sala foi encerrada porque o host ficou offline.');
+          return;
+        }
+
         if (data.type === 'LIVE_STANCE_SYNC') {
-          const mgr = room.managers.find(m => m.id === data.clientId);
-          if (mgr) {
-            mgr.stance = data.stance;
-            if (Client.screen === 'tourney') renderTourney();
+          if (MatchEngine.running && typeof data.applyTick === 'number') {
+            MatchEngine.enqueueStance(data.clientId, data.stance, data.applyTick);
+          } else {
+            const mgr = room.managers.find(m => m.id === data.clientId);
+            if (mgr) {
+              mgr.stance = data.stance;
+              if (Client.screen === 'tourney') renderTourney();
+            }
           }
           return;
         }
@@ -2248,11 +2356,16 @@
           });
         }
       } else if (action === 'SEND_OFFER' && payload.offer) {
+        if (payload.replaceOfferId) {
+          room.market.offers = room.market.offers.filter(o => o.id !== payload.replaceOfferId);
+        }
         const of = payload.offer;
         const partner = room.managers.find(m => m.id === of.toId);
         if (partner) {
           room.market.offers.unshift(of);
-          if (partner.id === Client.id) toast('Nova proposta de troca de ' + mgr.name + '!');
+          if (partner.id === Client.id) {
+            toast((of.note ? 'Contraproposta recebida de ' : 'Nova proposta de troca de ') + mgr.name + '!');
+          }
           if (partner.kind === 'PEER' || partner.kind === 'BOT') {
             schedulePeerTask(() => evaluateIncomingByPeer(of.id), 950);
           }
@@ -2274,12 +2387,13 @@
         room.market.offers = room.market.offers.filter(o => !(o.id === payload.offerId && o.fromId === clientId));
       } else if (action === 'SET_STANCE') {
         if (['DEFENSIVE', 'BALANCED', 'ATTACK'].includes(payload.stance)) {
-          mgr.stance = payload.stance;
           if (MatchEngine.running) {
-            OnlineNet.broadcastFromHost({ type: 'LIVE_STANCE_SYNC', code: room.code, clientId, stance: payload.stance });
-            renderTourney();
+            const applyTick = MatchEngine.ticks + 18;
+            MatchEngine.enqueueStance(clientId, payload.stance, applyTick);
+            OnlineNet.broadcastFromHost({ type: 'LIVE_STANCE_SYNC', code: room.code, clientId, stance: payload.stance, applyTick });
             return;
           }
+          mgr.stance = payload.stance;
         }
       }
 
@@ -2290,6 +2404,7 @@
     function saveRoomAndBroadcast(toastMsg = '') {
       if (!room) return;
       room.updatedAt = Date.now();
+      if (room.isCpuMode) return;
       try {
         const reg = readRegistry();
         reg[room.code] = room;
@@ -2453,30 +2568,58 @@
     }
 
     function createNewRoom() {
-      const code = 'FIFO-' + Math.floor(1000 + Math.random() * 9000);
+      const isCpu = Client.createForm.mode === 'CPU';
+      const code = (isCpu ? 'CPU-' : 'FIFO-') + Math.floor(1000 + Math.random() * 9000);
       const univ = Client.createForm.universe || 'BRASIL';
       const myClubId = univ === 'EUROPA' ? Client.clubEu : Client.clubBr;
       const myClubObj = getClubObj(myClubId, univ);
-      room = {
-        code,
-        title: Client.createForm.title.trim() || ('Sala de ' + Client.name),
-        hostId: Client.id,
-        stage: 'lobby', // 'lobby' | 'draft' | 'market' | 'tourney'
-        rules: Object.assign({}, Client.createForm),
-        managers: [
-          {
-            id: Client.id,
-            name: Client.name,
-            clubId: myClubObj.id,
-            color: myClubObj.kitBg,
-            kind: 'HUMAN',
-            ready: false,
-            formation: '4-3-3',
+      const rules = Object.assign({}, Client.createForm);
+      if (isCpu) rules.privacy = 'PRIVATE';
+
+      const managers = [
+        {
+          id: Client.id,
+          name: Client.name,
+          clubId: myClubObj.id,
+          color: myClubObj.kitBg,
+          kind: 'HUMAN',
+          ready: false,
+          formation: '4-3-3',
+          stance: 'BALANCED',
+          roster: [],
+          lineupIds: []
+        }
+      ];
+
+      if (isCpu) {
+        const cpuTotal = Math.max(1, Math.min(19, Number(Client.createForm.cpuCount) || 3));
+        for (let i = 0; i < cpuTotal; i++) {
+          const cid = pickAvailableClubId(univ, managers, null);
+          const cObj = getClubObj(cid, univ);
+          const botName = 'CPU ' + cObj.name;
+          managers.push({
+            id: 'bot_' + Date.now() + '_' + i,
+            name: botName,
+            clubId: cObj.id,
+            color: cObj.kitBg,
+            kind: 'BOT',
+            ready: true,
+            formation: i % 2 === 0 ? '4-3-3' : '4-4-2',
             stance: 'BALANCED',
             roster: [],
             lineupIds: []
-          }
-        ],
+          });
+        }
+      }
+
+      room = {
+        code,
+        isCpuMode: isCpu,
+        title: isCpu ? ('Copa contra CPU (' + (univ === 'EUROPA' ? 'Europa' : 'Brasil') + ')') : (Client.createForm.title.trim() || ('Sala de ' + Client.name)),
+        hostId: Client.id,
+        stage: 'lobby', // 'lobby' | 'draft' | 'market' | 'tourney'
+        rules,
+        managers,
         draft: {
           order: ['GOL', 'LAT', 'ZAG', 'MEI', 'ATA'],
           done: [],
@@ -2501,10 +2644,14 @@
         updatedAt: Date.now()
       };
       Client.screen = 'lobby';
-      OnlineNet.openRoomAsHost(code);
-      saveRoomAndBroadcast();
-      if (netChannel) {
-        try { netChannel.postMessage({ type: 'ROOMS_LIST_CHANGED' }); } catch (e) {}
+      if (!isCpu) {
+        OnlineNet.openRoomAsHost(code);
+        saveRoomAndBroadcast();
+        if (netChannel) {
+          try { netChannel.postMessage({ type: 'ROOMS_LIST_CHANGED' }); } catch (e) {}
+        }
+      } else {
+        OnlineNet.setBadge('LOCAL', 'Modo Solo vs CPU');
       }
       render();
     }
@@ -2558,63 +2705,7 @@
         });
       }
 
-      // Check sample public rooms
-      const sample = SAMPLE_PUBLIC_ROOMS.find(r => r.code === clean);
-      if (sample) {
-        const hostPeerId = 'peer_host_' + sample.code;
-        const peerMgrs = sample.peers.map((p, idx) => {
-          const pc = getClubObj(p.clubId, sample.universe);
-          return {
-            id: p.isHost ? hostPeerId : ('peer_' + sample.code + '_' + idx),
-            name: p.name,
-            clubId: pc.id,
-            color: pc.kitBg,
-            kind: 'PEER',
-            ready: true,
-            formation: '4-3-3',
-            stance: 'BALANCED',
-            roster: [],
-            lineupIds: []
-          };
-        });
-        const prefClub = sample.universe === 'EUROPA' ? Client.clubEu : Client.clubBr;
-        const myCid = pickAvailableClubId(sample.universe, peerMgrs, prefClub);
-        const myC = getClubObj(myCid, sample.universe);
-        room = {
-          code: sample.code,
-          title: sample.title,
-          hostId: hostPeerId,
-          stage: 'lobby',
-          rules: {
-            title: sample.title,
-            universe: sample.universe,
-            format: sample.format,
-            drawMode: sample.drawMode,
-            privacy: 'PUBLIC'
-          },
-          managers: peerMgrs.concat([{
-            id: Client.id,
-            name: Client.name,
-            clubId: myC.id,
-            color: myC.kitBg,
-            kind: 'HUMAN',
-            ready: false,
-            formation: '4-3-3',
-            stance: 'BALANCED',
-            roster: [],
-            lineupIds: []
-          }]),
-          draft: { order: ['GOL', 'LAT', 'ZAG', 'MEI', 'ATA'], done: [], queue: [], spinning: false },
-          market: { offers: [], history: [] },
-          tourney: { phase: 'NONE', roundName: '', waitingMatchReady: true, matches: [], activeMatchId: null, scorers: {}, championId: null, runnerUpId: null, finalSummary: '' },
-          updatedAt: Date.now()
-        };
-        Client.screen = 'lobby';
-        saveRoomAndBroadcast();
-        render();
-        toast('Conectado à sala de ' + sample.hostName + '! Dê pronto quando quiser.');
-        return;
-      }
+
 
       // Connect over Real Online Network (Dedicated Server WS or WebRTC PeerJS!)
       OnlineNet.connectToRemoteRoom(clean, (errMsg) => {
@@ -2666,11 +2757,13 @@
     }
 
     function addBotParticipant() {
-      if (!room || room.stage !== 'lobby') return;
+      if (!room || room.stage !== 'lobby' || !amIHost()) return;
       const idx = room.managers.length;
-      const name = 'Bot ' + PEER_NAMES[idx % PEER_NAMES.length];
       const cid = pickAvailableClubId(room.rules.universe, room.managers, null);
       const cObj = getClubObj(cid, room.rules.universe);
+      const baseName = 'CPU ' + cObj.name;
+      const exists = room.managers.some(m => m.name === baseName);
+      const name = exists ? ('CPU ' + PEER_NAMES[idx % PEER_NAMES.length]) : baseName;
       room.managers.push({
         id: 'bot_' + Date.now() + '_' + idx,
         name,
@@ -2678,13 +2771,14 @@
         color: cObj.kitBg,
         kind: 'BOT',
         ready: true,
-        formation: '4-4-2',
+        formation: idx % 2 === 0 ? '4-3-3' : '4-4-2',
         stance: 'BALANCED',
         roster: [],
         lineupIds: []
       });
       saveRoomAndBroadcast();
       render();
+      toast(name + ' entrou na partida.');
     }
 
     // =========================================================================
@@ -3075,11 +3169,16 @@
       const sendP = Client.ui.sendUids.map(u => me.roster.find(x => x.uid === u)).filter(Boolean);
       const askP = Client.ui.askUids.map(u => partner.roster.find(x => x.uid === u)).filter(Boolean);
       if (!sendP.length || !askP.length) {
-        toast('Selecione de 1 a 3 atletas de cada lado.');
+        toast('Selecione pelo menos 1 jogador de cada lado para enviar a oferta.');
         return;
       }
       const chk = validateSwapRosters(me, Client.ui.sendUids, askP, partner, Client.ui.askUids, sendP);
       if (!chk.ok) { toast(chk.msg); return; }
+
+      const replacingId = Client.ui.counterOfferId || null;
+      if (replacingId) {
+        room.market.offers = room.market.offers.filter(o => o.id !== replacingId);
+      }
 
       const newOffer = {
         id: 'of_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
@@ -3087,13 +3186,16 @@
         toId: partner.id,
         sendUids: [...Client.ui.sendUids],
         askUids: [...Client.ui.askUids],
-        status: 'PENDING'
+        status: 'PENDING',
+        note: replacingId ? ('Contraproposta de ' + me.name) : ''
       };
       room.market.offers.unshift(newOffer);
       Client.ui.sendUids = [];
       Client.ui.askUids = [];
+      Client.ui.counterOfferId = null;
+
       if (OnlineNet.isRemoteGuest()) {
-        OnlineNet.sendGuestAction('SEND_OFFER', { offer: newOffer });
+        OnlineNet.sendGuestAction('SEND_OFFER', { offer: newOffer, replaceOfferId: replacingId });
       } else {
         saveRoomAndBroadcast();
         if (partner.kind === 'PEER' || partner.kind === 'BOT') {
@@ -3101,7 +3203,7 @@
         }
       }
       render();
-      toast('Proposta enviada para ' + partner.name + '!');
+      toast((replacingId ? 'Contraproposta enviada para ' : 'Proposta enviada para ') + partner.name + '!');
     }
 
     function evaluateIncomingByPeer(offerId) {
@@ -3134,21 +3236,33 @@
         return;
       }
 
-      // Reject, and if close, send a counteroffer back to proposer's inbox!
+      // Reject, and build a free multi-player counteroffer (no player count limit!)
       room.market.offers = room.market.offers.filter(o => o.id !== offer.id);
       const deficit = (wAsk * reqMult) - wSend;
-      const extra = proposer.roster
+      const availableExtras = proposer.roster
         .filter(p => !offer.sendUids.includes(p.uid) && p.pos !== 'GOL')
-        .sort((a, b) => b.ovr - a.ovr)
-        .find(x => marketWeight(x.ovr) >= deficit * 0.5 && marketWeight(x.ovr) <= deficit * 1.9);
+        .sort((a, b) => b.ovr - a.ovr);
 
-      if (extra && offer.sendUids.length < 3) {
+      const addedUids = [];
+      let addedWeight = 0;
+      for (const cand of availableExtras) {
+        if (addedWeight >= deficit * 0.85) break;
+        const testAskUids = [...offer.sendUids, ...addedUids, cand.uid];
+        const testAskP = testAskUids.map(u => proposer.roster.find(x => x.uid === u)).filter(Boolean);
+        const testChk = validateSwapRosters(peer, offer.askUids, testAskP, proposer, testAskUids, askP);
+        if (testChk.ok) {
+          addedUids.push(cand.uid);
+          addedWeight += marketWeight(cand.ovr);
+        }
+      }
+
+      if (addedUids.length > 0 && addedWeight >= deficit * 0.6) {
         room.market.offers.unshift({
           id: 'of_cnt_' + Date.now(),
           fromId: peer.id,
           toId: proposer.id,
           sendUids: [...offer.askUids],
-          askUids: [...offer.sendUids, extra.uid],
+          askUids: [...offer.sendUids, ...addedUids],
           status: 'PENDING',
           note: 'Contraproposta de ' + peer.name
         });
@@ -3471,6 +3585,10 @@
       MatchEngine.startLive(m);
     }
 
+    function dist2(dx, dy) {
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
     const MatchEngine = {
       matchId: null,
       running: false,
@@ -3480,9 +3598,23 @@
       maxTicks: 2500,
       pauseFrames: 0,
       rng: null,
+      stanceQueue: [],
+      impacts: [],
+      shakeFrames: 0,
+      viewW: 720,
+      viewH: 405,
+      dpr: 1,
       discs: [],
       ball: { x: 0.5, y: 0.5, vx: 0, vy: 0, cooldown: 0, lastTouchIdx: -1 },
       trail: null,
+
+      enqueueStance(clientId, stance, applyTick) {
+        this.stanceQueue.push({ clientId, stance, applyTick: Number(applyTick) || (this.ticks + 1) });
+      },
+
+      addImpact(x, y, color) {
+        this.impacts.push({ x, y, r: 6, ttl: 14, maxTtl: 14, color: color || '#FFFFFF' });
+      },
 
       rand() {
         if (!this.rng) this.rng = createSeededRng(1234567);
@@ -3502,6 +3634,9 @@
         this.matchId = m.id;
         this.ticks = m.played ? this.maxTicks : 0;
         this.pauseFrames = 0;
+        this.stanceQueue = [];
+        this.impacts = [];
+        this.shakeFrames = 0;
         this.trail = null;
 
         const home = room.managers.find(x => x.id === m.homeId);
@@ -3566,11 +3701,26 @@
         const ticker = document.getElementById('match-ticker-text');
         if (ticker) ticker.textContent = 'Apita o árbitro! Partida em andamento.';
 
-        const frame = () => {
+        const FIXED_DT = 1000 / 60;
+        let lastTs = performance.now();
+        let accMs = 0;
+
+        const frame = (now) => {
           if (!this.running) return;
-          for (let s = 0; s < this.speed; s++) {
-            if (!this.step(m, false)) break;
+          const elapsed = Math.max(0, Math.min(20000, now - lastTs));
+          lastTs = now;
+          accMs += elapsed * this.speed;
+
+          let steps = 0;
+          const maxStepsPerFrame = elapsed > 400 ? 240 : 12;
+          const isCatchUp = elapsed > 400;
+          while (accMs >= FIXED_DT && steps < maxStepsPerFrame) {
+            accMs -= FIXED_DT;
+            steps++;
+            if (!this.step(m, isCatchUp)) break;
           }
+          if (accMs > FIXED_DT * maxStepsPerFrame) accMs = 0;
+
           this.draw();
           renderScoreboardLive();
           if (this.running) this.rafId = requestAnimationFrame(frame);
@@ -3602,6 +3752,24 @@
         }
 
         this.ticks++;
+        if (this.stanceQueue.length) {
+          for (let qi = this.stanceQueue.length - 1; qi >= 0; qi--) {
+            const q = this.stanceQueue[qi];
+            if (this.ticks >= q.applyTick) {
+              const targetMgr = room && room.managers.find(x => x.id === q.clientId);
+              if (targetMgr) targetMgr.stance = q.stance;
+              this.stanceQueue.splice(qi, 1);
+              if (!silent && Client.screen === 'tourney') renderTourney();
+            }
+          }
+        }
+        if (this.shakeFrames > 0) this.shakeFrames--;
+        if (this.impacts.length) {
+          for (let ii = this.impacts.length - 1; ii >= 0; ii--) {
+            this.impacts[ii].ttl--;
+            if (this.impacts[ii].ttl <= 0) this.impacts.splice(ii, 1);
+          }
+        }
         if (this.ball.cooldown > 0) this.ball.cooldown--;
         const b = this.ball;
 
@@ -3613,7 +3781,7 @@
         let chaserH = -1, dH = 999, chaserA = -1, dA = 999;
         this.discs.forEach((d, idx) => {
           if (d.role === 'GOL') return;
-          const dist = Math.hypot(d.x - b.x, d.y - b.y);
+          const dist = dist2(d.x - b.x, d.y - b.y);
           if (d.side === 'H' && dist < dH) { dH = dist; chaserH = idx; }
           if (d.side === 'A' && dist < dA) { dA = dist; chaserA = idx; }
         });
@@ -3635,7 +3803,7 @@
             ty = Math.max(0.08, Math.min(0.92, d.ay + (b.y - 0.5) * 0.18));
           }
           const dx = tx - d.x, dy = ty - d.y;
-          const dist = Math.hypot(dx, dy) || 1;
+          const dist = dist2(dx, dy) || 1;
           if (dist > 0.004) {
             d.x += (dx / dist) * Math.min(dist, spd);
             d.y += (dy / dist) * Math.min(dist, spd);
@@ -3647,7 +3815,7 @@
           for (let j = i + 1; j < this.discs.length; j++) {
             const a = this.discs[i], c = this.discs[j];
             const dx = c.x - a.x, dy = c.y - a.y;
-            const dist = Math.hypot(dx, dy);
+            const dist = dist2(dx, dy);
             if (dist > 0 && dist < 0.036) {
               const p = (0.036 - dist) * 0.5;
               if (a.role !== 'GOL') { a.x -= (dx / dist) * p; a.y -= (dy / dist) * p; }
@@ -3659,7 +3827,7 @@
         if (b.cooldown === 0) {
           for (let i = 0; i < this.discs.length; i++) {
             const d = this.discs[i];
-            if (Math.hypot(b.x - d.x, b.y - d.y) < (d.role === 'GOL' ? 0.033 : 0.028)) {
+            if (dist2(b.x - d.x, b.y - d.y) < (d.role === 'GOL' ? 0.033 : 0.028)) {
               this.touchBall(d, i, silent);
               break;
             }
@@ -3697,7 +3865,7 @@
         const skill = (d.ovr - 75) / 16;
 
         if (d.role === 'GOL') {
-          const shotSpd = Math.hypot(b.vx, b.vy);
+          const shotSpd = dist2(b.vx, b.vy);
           const saveProb = 0.67 + skill * 0.28 - shotSpd * 9.2;
           if (shotSpd > 0.012 && this.rand() > saveProb) {
             b.cooldown = 10;
@@ -3707,6 +3875,7 @@
           b.vy = (this.rand() - 0.5) * 0.014;
           b.cooldown = 14;
           if (!silent) {
+            this.addImpact(b.x, b.y, '#FFFFFF');
             AudioEngine.clack();
             const tk = document.getElementById('match-ticker-text');
             if (tk) tk.textContent = 'Defesa de ' + d.fullName + '!';
@@ -3720,12 +3889,14 @@
           const cornerY = this.rand() < 0.5 ? 0.40 : 0.60;
           const aimY = cornerY + (this.rand() - 0.5) * ((1.1 - skill) * 0.14);
           const dx = gx - b.x, dy = aimY - b.y;
-          const len = Math.hypot(dx, dy) || 1;
+          const len = dist2(dx, dy) || 1;
           const pwr = 0.018 + skill * 0.007;
           b.vx = (dx / len) * pwr; b.vy = (dy / len) * pwr;
           b.cooldown = 12;
           this.trail = { x1: b.x, y1: b.y, x2: gx, y2: aimY, ttl: 14, shot: true };
           if (!silent) {
+            this.addImpact(b.x, b.y, '#F6C945');
+            this.shakeFrames = 5;
             AudioEngine.kick();
             const tk = document.getElementById('match-ticker-text');
             if (tk) tk.textContent = d.fullName + ' bate pro gol!';
@@ -3737,7 +3908,7 @@
         let best = null, bestSc = -999;
         mates.forEach(mt => {
           const gain = attRight ? (mt.x - d.x) : (d.x - mt.x);
-          const dist = Math.hypot(mt.x - d.x, mt.y - d.y);
+          const dist = dist2(mt.x - d.x, mt.y - d.y);
           if (dist < 0.07 || dist > 0.46) return;
           const sc = gain * 2.2 - Math.abs(mt.y - 0.5) * 0.25 + this.rand() * 0.18;
           if (sc > bestSc) { bestSc = sc; best = mt; }
@@ -3745,7 +3916,7 @@
 
         if (best && (bestSc > 0.02 || d.role === 'ZAG' || this.rand() < 0.68)) {
           const dx = best.x - b.x, dy = best.y - b.y;
-          const len = Math.hypot(dx, dy) || 1;
+          const len = dist2(dx, dy) || 1;
           const ps = Math.min(0.016, 0.009 + Math.min(0.45, len) * 0.018);
           b.vx = (dx / len) * ps; b.vy = (dy / len) * ps;
           b.cooldown = 11;
@@ -3780,6 +3951,8 @@
         room.tourney.scorers[scorer.uid].goals++;
 
         if (!silent) {
+          this.addImpact(b.x, b.y, '#F6C945');
+          this.shakeFrames = 14;
           AudioEngine.goal();
           const ov = document.getElementById('goal-overlay');
           const ot = document.getElementById('goal-overlay-text');
@@ -3808,10 +3981,14 @@
           m.penHome = ph; m.penAway = pa;
         }
         if (!silent) AudioEngine.whistle();
-        checkStageProgression();
-        if (!OnlineNet.isRemoteGuest()) {
-          saveRoomAndBroadcast();
+        if (OnlineNet.isRemoteGuest()) {
+          const tk = document.getElementById('match-ticker-text');
+          if (tk) tk.textContent = 'Fim de jogo! Sincronizando tabela com o host...';
+          if (!silent) render();
+          return;
         }
+        checkStageProgression();
+        saveRoomAndBroadcast();
         if (!silent) render();
       },
 
@@ -3821,8 +3998,12 @@
         if (!wrap || !canvas) return;
         const r = wrap.getBoundingClientRect();
         if (r.width > 20 && r.height > 20) {
-          canvas.width = Math.floor(r.width);
-          canvas.height = Math.floor(r.height);
+          const dpr = Math.min(2, window.devicePixelRatio || 1);
+          this.viewW = Math.floor(r.width);
+          this.viewH = Math.floor(r.height);
+          this.dpr = dpr;
+          canvas.width = Math.floor(r.width * dpr);
+          canvas.height = Math.floor(r.height * dpr);
         }
         this.draw();
       },
@@ -3831,7 +4012,14 @@
         const canvas = document.getElementById('pitch-canvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
-        const w = canvas.width || 720, h = canvas.height || 405;
+        const dpr = this.dpr || 1;
+        const w = this.viewW || canvas.width || 720;
+        const h = this.viewH || canvas.height || 405;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        if (this.shakeFrames > 0) {
+          const mag = this.shakeFrames > 7 ? 3.2 : 1.8;
+          ctx.translate((Math.random() - 0.5) * mag, (Math.random() - 0.5) * mag);
+        }
 
         const stripes = 12, sw = w / stripes;
         for (let i = 0; i < stripes; i++) {
@@ -3921,6 +4109,20 @@
           ctx.fillText(d.name, cx, cy + rad + 9.5);
         });
 
+        if (this.impacts && this.impacts.length) {
+          this.impacts.forEach(imp => {
+            const p = 1 - (imp.ttl / imp.maxTtl);
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(imp.x * w, imp.y * h, 8 + p * 22, 0, Math.PI * 2);
+            ctx.strokeStyle = imp.color;
+            ctx.globalAlpha = (1 - p) * 0.65;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+          });
+        }
+
         const bx = this.ball.x * w, by = this.ball.y * h, br = Math.max(4.5, rad * 0.42);
         ctx.beginPath(); ctx.arc(bx, by + 1.5, br, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fill();
         ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fillStyle = '#FFFFFF'; ctx.fill();
@@ -3975,7 +4177,7 @@
       if (inp && document.activeElement !== inp) inp.value = Client.name;
 
       const reg = readRegistry();
-      const customPublic = Object.values(reg).filter(r => r.stage === 'lobby' && r.rules && r.rules.privacy === 'PUBLIC');
+      const customPublic = Object.values(reg).filter(r => !r.isCpuMode && r.stage === 'lobby' && r.rules && r.rules.privacy === 'PUBLIC');
       const fmtLabel = { GROUPS_KNOCKOUT: 'Grupos + mata-mata', KNOCKOUT: 'Mata-mata', LEAGUE: 'Pontos corridos' };
 
       const cards = [];
@@ -4008,23 +4210,24 @@
           count: r.managers.length
         });
       });
-      SAMPLE_PUBLIC_ROOMS.forEach(s => {
-        if (!seenCodes.has(s.code) && (!reg[s.code] || reg[s.code].stage === 'lobby')) {
-          const liveRoom = reg[s.code];
-          const liveHost = liveRoom ? liveRoom.managers.find(m => m.id === liveRoom.hostId) : null;
-          cards.push({
-            code: s.code,
-            title: s.title,
-            univ: s.universe,
-            fmt: fmtLabel[s.format],
-            hostName: s.hostName,
-            hostClubId: liveHost ? liveHost.clubId : s.hostClubId,
-            count: liveRoom ? liveRoom.managers.length : s.peers.length
-          });
-        }
-      });
+      const grid = document.getElementById('open-rooms-grid');
+      if (cards.length === 0) {
+        grid.innerHTML = `
+          <div class="md:col-span-2 surface p-5 flex flex-wrap items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <div class="font-extrabold text-sm">Nenhuma sala pública aberta no momento</div>
+              <p class="text-xs" style="color: var(--muted);">Crie uma sala online para chamar os amigos ou comece uma copa imediata no modo contra CPU.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" data-action="go-create-setup" class="btn-primary px-3.5 py-2 text-xs">Criar sala</button>
+              <button type="button" data-action="go-cpu-setup" class="btn-secondary px-3.5 py-2 text-xs">Modo CPU</button>
+            </div>
+          </div>
+        `;
+        return;
+      }
 
-      document.getElementById('open-rooms-grid').innerHTML = cards.map(c => `
+      grid.innerHTML = cards.map(c => `
         <div class="surface p-4 flex items-center justify-between gap-3">
           <div class="space-y-1 min-w-0">
             <div class="flex items-center gap-2">
@@ -4048,10 +4251,35 @@
 
     function renderCreate() {
       const f = Client.createForm;
+      const isCpu = f.mode === 'CPU';
       const isEu = f.universe === 'EUROPA';
       const clubs = clubsForUniverse(f.universe);
       const selectedClubId = isEu ? Client.clubEu : Client.clubBr;
       const selectedClub = getClubObj(selectedClubId, f.universe);
+
+      document.getElementById('create-screen-title').textContent = isCpu ? 'Modo contra CPU' : 'Configure a sala online';
+      document.getElementById('create-screen-sub').textContent = isCpu
+        ? 'Escolha quantas CPUs quer enfrentar, seu escudo e o formato da copa para jogar sozinho agora.'
+        : 'Você será o host. Defina as regras, abra o link para os amigos e adicione bots se quiser.';
+
+      document.getElementById('create-room-title-wrap').classList.toggle('hidden', isCpu);
+      document.getElementById('create-privacy-wrap').classList.toggle('hidden', isCpu);
+      document.getElementById('create-cpu-count-wrap').classList.toggle('hidden', !isCpu);
+
+      const cpuN = Math.max(1, Math.min(19, Number(f.cpuCount) || 3));
+      document.getElementById('create-cpu-count-num').textContent = String(cpuN);
+      document.getElementById('create-cpu-total-label').textContent = (cpuN + 1) + ' times no total (você + ' + cpuN + ' CPUs)';
+      [3, 5, 7, 11].forEach(n => {
+        const b = document.getElementById('cpu-cnt-' + n);
+        if (b) {
+          b.style.borderColor = cpuN === n ? 'var(--mint-border)' : 'var(--line)';
+          b.style.background = cpuN === n ? 'var(--mint)' : 'var(--card)';
+        }
+      });
+
+      document.getElementById('btn-confirm-open-room').textContent = isCpu
+        ? 'Criar copa contra CPU'
+        : 'Abrir sala e gerar código';
 
       document.getElementById('cfg-univ-BRASIL').classList.toggle('selected', f.universe === 'BRASIL');
       document.getElementById('cfg-univ-EUROPA').classList.toggle('selected', f.universe === 'EUROPA');
@@ -4071,7 +4299,7 @@
         </button>
       `).join('');
 
-      document.getElementById('create-sum-host').textContent = Client.name;
+      document.getElementById('create-sum-host').textContent = Client.name + (isCpu ? ' (vs ' + cpuN + ' CPUs)' : '');
       document.getElementById('create-sum-crest').innerHTML = `${renderClubCrest(selectedClub.id, 20, f.universe)} <span>${esc(selectedClub.name)}</span>`;
       document.getElementById('create-sum-univ').textContent = f.universe === 'BRASIL' ? 'Futebol Brasileiro' : 'Futebol Europeu';
       const fmtMap = { GROUPS_KNOCKOUT: 'Grupos + mata-mata', KNOCKOUT: 'Mata-mata direto', LEAGUE: 'Pontos corridos' };
@@ -4432,8 +4660,20 @@
           `<option value="${o.id}" ${o.id === partner.id ? 'selected' : ''}>${esc(o.name)} • ${esc(getClubObj(o.clubId, room.rules.universe).name)} (${teamAvgOvr(o)})</option>`
         ).join('');
 
-        document.getElementById('send-cnt').textContent = '(' + Client.ui.sendUids.length + '/3)';
-        document.getElementById('ask-cnt').textContent = '(' + Client.ui.askUids.length + '/3)';
+        document.getElementById('send-cnt').textContent = '(' + Client.ui.sendUids.length + ' ' + (Client.ui.sendUids.length === 1 ? 'selecionado' : 'selecionados') + ')';
+        document.getElementById('ask-cnt').textContent = '(' + Client.ui.askUids.length + ' ' + (Client.ui.askUids.length === 1 ? 'selecionado' : 'selecionados') + ')';
+
+        const cBanner = document.getElementById('counter-banner');
+        const cBannerText = document.getElementById('counter-banner-text');
+        const sendBtn = document.getElementById('btn-send-trade-offer');
+        if (Client.ui.counterOfferId) {
+          cBanner.classList.remove('hidden');
+          cBannerText.textContent = 'Editando contraproposta para ' + partner.name + ': adicione ou remova quantos atletas quiser.';
+          sendBtn.textContent = 'Enviar contraproposta';
+        } else {
+          cBanner.classList.add('hidden');
+          sendBtn.textContent = 'Enviar proposta';
+        }
 
         const renderPickCol = (mgrObj, selectedArr, side) => [...mgrObj.roster].sort((a, b) => b.ovr - a.ovr).map(p => {
           const picked = selectedArr.includes(p.uid);
@@ -4461,7 +4701,7 @@
           const r = wA / Math.max(1, wB);
           hint.textContent = r >= 0.9 && r <= 1.2 ? 'Proposta equilibrada.' : (r > 1.2 ? 'Pacote forte para convencer!' : 'Oferta leve pelo jogador pedido.');
         } else {
-          hint.textContent = 'Escolha de 1 a 3 atletas de cada lado para enviar oferta online.';
+          hint.textContent = 'Troca livre: escolha quantos atletas quiser de cada lado.';
         }
       }
 
@@ -4497,8 +4737,9 @@
               <div class="row-pick p-3 space-y-2 text-xs">
                 ${of.note ? `<div class="font-bold" style="color:#15803D;">${esc(of.note)}</div>` : ''}
                 <div class="flex items-center gap-1.5 flex-wrap">${renderClubCrest(sender.clubId, 16, room.rules.universe)} <span><strong>${esc(sender.name)}</strong> envia <strong>${sp.map(x => esc(x.name) + ' (' + x.ovr + ')').join(' + ')}</strong> pelos seus <strong>${ap.map(x => esc(x.name) + ' (' + x.ovr + ')').join(' + ')}</strong></span></div>
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2">
                   <button type="button" data-action="answer-offer" data-id="${of.id}" data-ans="accept" class="btn-primary px-3 py-1.5 text-xs">Aceitar troca</button>
+                  <button type="button" data-action="counter-offer" data-id="${of.id}" class="btn-secondary px-3 py-1.5 text-xs">Fazer contraproposta</button>
                   <button type="button" data-action="answer-offer" data-id="${of.id}" data-ans="reject" class="btn-secondary px-3 py-1.5 text-xs">Recusar</button>
                 </div>
               </div>
@@ -4796,14 +5037,37 @@
         return;
       }
 
-      // Home & Create Room
+      // Home & Create Room / CPU Mode
       if (act === 'go-create-setup') {
         if (!ensureNickname()) return;
+        Client.createForm.mode = 'ONLINE';
         Client.createForm.title = 'Sala de ' + Client.name;
         const ti = document.getElementById('room-title-input');
         if (ti) ti.value = Client.createForm.title;
         Client.screen = 'create';
         render();
+        return;
+      }
+
+      if (act === 'go-cpu-setup') {
+        if (!ensureNickname()) return;
+        Client.createForm.mode = 'CPU';
+        Client.screen = 'create';
+        render();
+        return;
+      }
+
+      if (act === 'set-cpu-count') {
+        Client.createForm.cpuCount = Math.max(1, Math.min(19, Number(el.getAttribute('data-val')) || 3));
+        renderCreate();
+        return;
+      }
+
+      if (act === 'step-cpu-count') {
+        const delta = Number(el.getAttribute('data-delta')) || 0;
+        const cur = Number(Client.createForm.cpuCount) || 3;
+        Client.createForm.cpuCount = Math.max(1, Math.min(19, cur + delta));
+        renderCreate();
         return;
       }
 
@@ -5027,10 +5291,7 @@
         const arr = side === 'send' ? Client.ui.sendUids : Client.ui.askUids;
         const idx = arr.indexOf(uid);
         if (idx !== -1) arr.splice(idx, 1);
-        else {
-          if (arr.length >= 3) { toast('Máximo de 3 jogadores por lado no pacote.'); return; }
-          arr.push(uid);
-        }
+        else arr.push(uid);
         renderMarket();
         return;
       }
@@ -5038,7 +5299,31 @@
       if (act === 'clear-offer') {
         Client.ui.sendUids = [];
         Client.ui.askUids = [];
+        Client.ui.counterOfferId = null;
         renderMarket();
+        return;
+      }
+
+      if (act === 'cancel-counter-edit') {
+        Client.ui.counterOfferId = null;
+        Client.ui.sendUids = [];
+        Client.ui.askUids = [];
+        renderMarket();
+        return;
+      }
+
+      if (act === 'counter-offer') {
+        if (!room) return;
+        const id = el.getAttribute('data-id');
+        const offer = room.market.offers.find(o => o.id === id);
+        if (!offer) return;
+        Client.ui.partnerId = offer.fromId;
+        Client.ui.sendUids = [...offer.askUids];
+        Client.ui.askUids = [...offer.sendUids];
+        Client.ui.counterOfferId = offer.id;
+        Client.ui.mktTab = 'PROPOSE';
+        renderMarket();
+        toast('Ajuste livremente os jogadores de cada lado e envie sua contraproposta.');
         return;
       }
 
@@ -5115,15 +5400,18 @@
         const me = myMgr();
         if (me) {
           const nextSt = el.getAttribute('data-st');
-          me.stance = nextSt;
           if (OnlineNet.isRemoteGuest()) {
             OnlineNet.sendGuestAction('SET_STANCE', { stance: nextSt });
+            toast('Postura solicitada: ' + (nextSt === 'ATTACK' ? 'Ofensivo' : (nextSt === 'DEFENSIVE' ? 'Retranca' : 'Equilibrado')));
           } else if (MatchEngine.running) {
-            OnlineNet.broadcastFromHost({ type: 'LIVE_STANCE_SYNC', code: room.code, clientId: me.id, stance: nextSt });
+            const applyTick = MatchEngine.ticks + 18;
+            MatchEngine.enqueueStance(me.id, nextSt, applyTick);
+            OnlineNet.broadcastFromHost({ type: 'LIVE_STANCE_SYNC', code: room.code, clientId: me.id, stance: nextSt, applyTick });
           } else {
+            me.stance = nextSt;
             saveRoomAndBroadcast();
+            renderTourney();
           }
-          renderTourney();
         }
         return;
       }
@@ -5183,6 +5471,7 @@
         } else if (t.id === 'partner-select') {
           Client.ui.partnerId = t.value;
           Client.ui.askUids = [];
+          Client.ui.counterOfferId = null;
           renderMarket();
         }
       });
