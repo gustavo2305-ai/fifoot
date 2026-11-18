@@ -361,7 +361,7 @@
 
       <div class="flex items-center gap-2">
         <button type="button" data-action="open-db-modal" class="btn-secondary px-3 py-1.5 text-xs">
-          Jogadores (262)
+          Jogadores (263)
         </button>
         <button type="button" id="btn-sound" data-action="toggle-sound" class="btn-secondary w-8 h-8 flex items-center justify-center text-xs" title="Som" aria-label="Alternar som">
           <svg id="icon-sound-on" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
@@ -978,249 +978,25 @@
   <div id="toast-stack" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-xs pointer-events-none"></div>
 
   <script>
-    // Resilient Official Server WebSocket Adapter (Outbox + Backoff + visibilitychange + Host Reconnect)
-    (function () {
-      if (!window.location || !/^https?:/i.test(window.location.protocol)) return;
-
-      let ws = null;
-      let connected = false;
-      let serverConfirmed = false;
-      let reconnectDelay = 1000;
-      let reconnectTimer = null;
-      let pendingJoinNotFound = null;
-      let activeCode = null;
-      let isHostRole = false;
-      const outbox = [];
-      const MAX_OUTBOX = 32;
-
-      async function fetchGlobalRooms() {
-        try {
-          const res = await fetch('/api/rooms', { cache: 'no-store' });
-          if (!res.ok) return;
-          const data = await res.json();
-          if (Array.isArray(data.rooms)) {
-            window.FIFOOT_GLOBAL_ROOMS = data.rooms;
-            if (typeof window.refreshHomeRooms === 'function') window.refreshHomeRooms();
-          }
-        } catch (e) {}
-      }
-
-      function enqueueAndSend(obj, queueIfOffline) {
-        if (ws && connected && ws.readyState === 1) {
-          try {
-            ws.send(JSON.stringify(obj));
-            return;
-          } catch (e) {}
-        }
-        if (queueIfOffline) {
-          if (outbox.length >= MAX_OUTBOX) outbox.shift();
-          outbox.push(obj);
-        }
-      }
-
-      function flushOutbox() {
-        while (outbox.length > 0 && ws && connected && ws.readyState === 1) {
-          const item = outbox.shift();
-          try { ws.send(JSON.stringify(item)); } catch (e) { break; }
-        }
-      }
-
-      function scheduleReconnect() {
-        if (reconnectTimer) return;
-        reconnectTimer = setTimeout(function () {
-          reconnectTimer = null;
-          connectSocket();
-        }, reconnectDelay);
-        reconnectDelay = Math.min(8000, reconnectDelay * 2);
-      }
-
-      function connectSocket() {
-        if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
-        const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        try {
-          ws = new WebSocket(proto + '//' + window.location.host + '/ws');
-        } catch (e) {
-          scheduleReconnect();
-          return;
-        }
-
-        ws.onopen = function () {
-          connected = true;
-          reconnectDelay = 1000;
-          if (typeof OnlineNet !== 'undefined') {
-            OnlineNet.setBadge('SERVER', 'Servidor Oficial Online');
-          }
-          // Automatic Re-sync if already inside an active online room!
-          if (typeof room !== 'undefined' && room && !room.isCpuMode && typeof Client !== 'undefined') {
-            activeCode = room.code;
-            isHostRole = (room.hostId === Client.id);
-            if (isHostRole) {
-              enqueueAndSend({
-                type: 'HOST_RECONNECT',
-                code: room.code,
-                clientId: Client.id,
-                room: room
-              }, false);
-            } else {
-              enqueueAndSend({
-                type: 'CLIENT_JOIN_ROOM',
-                code: room.code,
-                clientId: Client.id,
-                packet: {
-                  type: 'GUEST_JOIN',
-                  code: room.code,
-                  clientId: Client.id,
-                  name: Client.name,
-                  clubBr: Client.clubBr,
-                  clubEu: Client.clubEu
-                }
-              }, false);
-            }
-          }
-          flushOutbox();
-          fetchGlobalRooms();
-        };
-
-        ws.onmessage = function (ev) {
-          let msg = null;
-          try { msg = JSON.parse(ev.data); } catch (e) { return; }
-          if (!msg) return;
-
-          if (msg.type === 'PUBLIC_ROOMS_UPDATED') {
-            window.FIFOOT_GLOBAL_ROOMS = msg.rooms || [];
-            if (typeof window.refreshHomeRooms === 'function') window.refreshHomeRooms();
-            return;
-          }
-
-          if (msg.type === 'ROOM_NOT_FOUND') {
-            if (pendingJoinNotFound) {
-              const cb = pendingJoinNotFound;
-              pendingJoinNotFound = null;
-              cb(msg.reason || 'Sala não encontrada no servidor.');
-            }
-            return;
-          }
-
-          if (msg.type === 'HOST_PROMOTED') {
-            if (typeof room !== 'undefined' && room && room.code === msg.code) {
-              room.hostId = msg.newHostId;
-              isHostRole = (typeof Client !== 'undefined' && Client.id === msg.newHostId);
-              if (typeof toast === 'function') toast(msg.notice || 'Novo host assumiu a sala.');
-              if (typeof render === 'function') render();
-            }
-            return;
-          }
-
-          if (msg.packet && typeof OnlineNet !== 'undefined') {
-            if (msg.packet.type === 'JOIN_ACCEPTED' || msg.packet.type === 'JOIN_REJECTED') {
-              pendingJoinNotFound = null;
-            }
-            if (isHostRole) OnlineNet.onHostReceivePacket(msg.packet, null);
-            else OnlineNet.onClientReceivePacket(msg.packet);
-          }
-        };
-
-        ws.onclose = function () {
-          connected = false;
-          if (typeof OnlineNet !== 'undefined' && serverConfirmed) {
-            OnlineNet.setBadge('CONNECTING', 'Reconectando...');
-          }
-          if (serverConfirmed) scheduleReconnect();
-        };
-
-        ws.onerror = function () {};
-      }
-
-      document.addEventListener('visibilitychange', function () {
-        if (document.visibilityState === 'visible' && serverConfirmed) {
-          if (!connected || !ws || ws.readyState !== 1) {
-            reconnectDelay = 1000;
-            if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-            connectSocket();
-          }
-        }
-      });
-
-      window.FIFOOT_WS_ADAPTER = {
-        isConnected: function () { return connected; },
-        hostRoom: function (code, roomSnapshot) {
-          activeCode = code;
-          isHostRole = true;
-          enqueueAndSend({ type: 'HOST_CREATE_ROOM', code: code, clientId: roomSnapshot.hostId, room: roomSnapshot }, true);
-        },
-        joinRoom: function (code, joinInfo, onNotFound) {
-          activeCode = code;
-          isHostRole = false;
-          pendingJoinNotFound = onNotFound || null;
-          enqueueAndSend({
-            type: 'CLIENT_JOIN_ROOM',
-            code: code,
-            clientId: joinInfo.clientId,
-            packet: {
-              type: 'GUEST_JOIN',
-              code: code,
-              clientId: joinInfo.clientId,
-              name: joinInfo.name,
-              clubBr: joinInfo.clubBr,
-              clubEu: joinInfo.clubEu
-            }
-          }, true);
-        },
-        broadcastFromHost: function (code, packet, roomSnapshot) {
-          enqueueAndSend({ type: 'HOST_BROADCAST', code: code, packet: packet, room: roomSnapshot || null }, true);
-        },
-        sendToHost: function (code, packet) {
-          enqueueAndSend({ type: 'CLIENT_TO_HOST', code: code, packet: packet }, true);
-        },
-        leaveRoom: function () {
-          if (activeCode) enqueueAndSend({ type: 'LEAVE_ROOM', code: activeCode }, false);
-          activeCode = null;
-          isHostRole = false;
-          pendingJoinNotFound = null;
-          outbox.length = 0;
-        }
-      };
-
-      // Probe /health with cold-start feedback for Render Free Tier
-      let wakeTimer = setTimeout(function () {
-        if (!serverConfirmed && typeof OnlineNet !== 'undefined') {
-          OnlineNet.setBadge('CONNECTING', 'Acordando servidor...');
-        }
-      }, 2400);
-
-      fetch('/health', { cache: 'no-store' })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (d) {
-          clearTimeout(wakeTimer);
-          if (d && d.ok === true) {
-            serverConfirmed = true;
-            connectSocket();
-            setInterval(fetchGlobalRooms, 15000);
-          }
-        })
-        .catch(function () { clearTimeout(wakeTimer); });
-    })();
-  </script>
-  <script>
     // =========================================================================
     // 1. VERIFIED DATABASES (135 Brasileirão Nov/2026 FM26+eFB & 127 EA FC 27)
     // =========================================================================
     const PLAYERS_BRASIL = [
-      { id: 'br1', name: 'Léo Jardim', club: 'Vasco', pos: 'GOL', ovr: 83, ref: 'FM26 CA 136' },
+      { id: 'br1', name: 'Léo Jardim', club: 'Vasco', pos: 'GOL', ovr: 83, ref: 'Vasco 2026' },
       { id: 'br2', name: 'Everson', club: 'Atlético-MG', pos: 'GOL', ovr: 83, ref: 'FM26 CA 135' },
-      { id: 'br3', name: 'Fábio', club: 'Fluminense', pos: 'GOL', ovr: 82, ref: 'FM26 CA 134' },
-      { id: 'br4', name: 'Weverton', club: 'Grêmio', pos: 'GOL', ovr: 82, ref: 'FM26 CA 134' },
-      { id: 'br5', name: 'Agustín Rossi', club: 'Flamengo', pos: 'GOL', ovr: 82, ref: 'FM26 CA 133 • eFB 80' },
-      { id: 'br6', name: 'Hugo Souza', club: 'Corinthians', pos: 'GOL', ovr: 82, ref: 'FM26 CA 133' },
-      { id: 'br7', name: 'Rafael', club: 'São Paulo', pos: 'GOL', ovr: 82, ref: 'FM26 CA 132 • eFB 79' },
+      { id: 'br3', name: 'Fábio', club: 'Fluminense', pos: 'GOL', ovr: 80, ref: 'Fluminense 2026' },
+      { id: 'br4', name: 'Weverton', club: 'Grêmio', pos: 'GOL', ovr: 81, ref: 'Grêmio 2026' },
+      { id: 'br5', name: 'Agustín Rossi', club: 'Flamengo', pos: 'GOL', ovr: 83, ref: 'Flamengo 2026' },
+      { id: 'br6', name: 'Hugo Souza', club: 'Corinthians', pos: 'GOL', ovr: 81, ref: 'Corinthians Série A 2026' },
+      { id: 'br7', name: 'Rafael', club: 'São Paulo', pos: 'GOL', ovr: 83, ref: 'São Paulo 2026' },
       { id: 'br8', name: 'Gabriel Brazão', club: 'Santos', pos: 'GOL', ovr: 82, ref: 'FM26 CA 132' },
-      { id: 'br9', name: 'Cássio', club: 'Cruzeiro', pos: 'GOL', ovr: 81, ref: 'FM26 CA 130 • eFB 80' },
+      { id: 'br9', name: 'Cássio', club: 'Cruzeiro', pos: 'GOL', ovr: 80, ref: 'Cruzeiro 2026' },
       { id: 'br10', name: 'Sergio Rochet', club: 'Internacional', pos: 'GOL', ovr: 81, ref: 'FM26 CA 130' },
-      { id: 'br11', name: 'Neto', club: 'Botafogo', pos: 'GOL', ovr: 81, ref: 'FM26 CA 130' },
-      { id: 'br12', name: 'Carlos Miguel', club: 'Palmeiras', pos: 'GOL', ovr: 80, ref: 'FM26 CA 128' },
-      { id: 'br13', name: 'Tiago Volpi', club: 'RB Bragantino', pos: 'GOL', ovr: 80, ref: 'FM26 CA 128' },
-      { id: 'br14', name: 'Gabriel Batista', club: 'Botafogo', pos: 'GOL', ovr: 80, ref: 'eFB 78' },
-      { id: 'br15', name: 'Cleiton', club: 'RB Bragantino', pos: 'GOL', ovr: 79, ref: 'FM26 CA 126' },
+      { id: 'br11', name: 'Neto', club: 'Botafogo', pos: 'GOL', ovr: 79, ref: 'Botafogo 2026' },
+      { id: 'br12', name: 'Carlos Miguel', club: 'Palmeiras', pos: 'GOL', ovr: 79, ref: 'Palmeiras 2026' },
+      { id: 'br13', name: 'Tiago Volpi', club: 'RB Bragantino', pos: 'GOL', ovr: 77, ref: 'RB Bragantino 2026' },
+      { id: 'br14', name: 'Gabriel Batista', club: 'Botafogo', pos: 'GOL', ovr: 77, ref: 'Botafogo 2026' },
+      { id: 'br15', name: 'Cleiton', club: 'RB Bragantino', pos: 'GOL', ovr: 77, ref: 'RB Bragantino 2026' },
 
       { id: 'br16', name: 'Alex Sandro', club: 'Flamengo', pos: 'LAT', ovr: 83, ref: 'FM26 CA 136' },
       { id: 'br17', name: 'William', club: 'Cruzeiro', pos: 'LAT', ovr: 83, ref: 'FM26 CA 136 • eFB 79' },
@@ -1228,8 +1004,8 @@
       { id: 'br19', name: 'Guilherme Arana', club: 'Fluminense', pos: 'LAT', ovr: 82, ref: 'FM26 CA 134' },
       { id: 'br20', name: 'Alex Telles', club: 'Botafogo', pos: 'LAT', ovr: 82, ref: 'FM26 CA 134 • eFB 80' },
       { id: 'br21', name: 'Vitinho', club: 'Botafogo', pos: 'LAT', ovr: 82, ref: 'FM26 CA 133 • eFB 79' },
-      { id: 'br22', name: 'Joaquín Piquerez', club: 'Palmeiras', pos: 'LAT', ovr: 82, ref: 'FM26 CA 133' },
-      { id: 'br23', name: 'Luciano Juba', club: 'Bahia', pos: 'LAT', ovr: 82, ref: 'FM26 CA 133' },
+      { id: 'br22', name: 'Joaquín Piquerez', club: 'Palmeiras', pos: 'LAT', ovr: 83, ref: 'Palmeiras 2026' },
+      { id: 'br23', name: 'Luciano Juba', club: 'Bahia', pos: 'LAT', ovr: 82, ref: 'Bahia 2026' },
       { id: 'br24', name: 'Gabriel Rojas', club: 'Cruzeiro', pos: 'LAT', ovr: 82, ref: 'eFB 81' },
       { id: 'br25', name: 'Emerson Royal', club: 'Flamengo', pos: 'LAT', ovr: 81, ref: 'FM26 CA 131 • eFB 80' },
       { id: 'br26', name: 'Enzo Díaz', club: 'São Paulo', pos: 'LAT', ovr: 81, ref: 'FM26 CA 131 • eFB 78' },
@@ -1239,26 +1015,26 @@
       { id: 'br30', name: 'Wendell', club: 'São Paulo', pos: 'LAT', ovr: 81, ref: 'FM26 CA 129 • eFB 80' },
       { id: 'br31', name: 'Lucas Piton', club: 'Vasco', pos: 'LAT', ovr: 81, ref: 'FM26 CA 129' },
       { id: 'br32', name: 'Juninho Capixaba', club: 'RB Bragantino', pos: 'LAT', ovr: 81, ref: 'FM26 CA 129' },
-      { id: 'br33', name: 'Matheuzinho', club: 'Corinthians', pos: 'LAT', ovr: 80, ref: 'FM26 CA 128' },
+      { id: 'br33', name: 'Matheuzinho', club: 'Corinthians', pos: 'LAT', ovr: 78, ref: 'Corinthians 2026' },
       { id: 'br34', name: 'Guillermo Varela', club: 'Flamengo', pos: 'LAT', ovr: 80, ref: 'FM26 CA 128 • eFB 77' },
-      { id: 'br35', name: 'Kaiki', club: 'Cruzeiro', pos: 'LAT', ovr: 80, ref: 'FM26 CA 128' },
-      { id: 'br36', name: 'Rodinei', club: 'Santos', pos: 'LAT', ovr: 80, ref: 'Série A 2026' },
-      { id: 'br37', name: 'Khellven', club: 'Palmeiras', pos: 'LAT', ovr: 80, ref: 'FM26 CA 127' },
-      { id: 'br38', name: 'Agustín Giay', club: 'Palmeiras', pos: 'LAT', ovr: 79, ref: 'FM26 CA 125' },
-      { id: 'br39', name: 'José Hurtado', club: 'RB Bragantino', pos: 'LAT', ovr: 79, ref: 'FM26 CA 124' },
+      { id: 'br35', name: 'Kaiki', club: 'Cruzeiro', pos: 'LAT', ovr: 78, ref: 'Cruzeiro 2026' },
+      { id: 'br36', name: 'Rodinei', club: 'Santos', pos: 'LAT', ovr: 78, ref: 'Santos 2026' },
+      { id: 'br37', name: 'Khellven', club: 'Palmeiras', pos: 'LAT', ovr: 78, ref: 'Palmeiras 2026' },
+      { id: 'br38', name: 'Agustín Giay', club: 'Palmeiras', pos: 'LAT', ovr: 78, ref: 'Palmeiras 2026' },
+      { id: 'br39', name: 'José Hurtado', club: 'RB Bragantino', pos: 'LAT', ovr: 77, ref: 'RB Bragantino 2026' },
       { id: 'br40', name: 'Agustín Sant\'Anna', club: 'RB Bragantino', pos: 'LAT', ovr: 78, ref: 'FM26 CA 123' },
-      { id: 'br41', name: 'Marçal', club: 'Botafogo', pos: 'LAT', ovr: 78, ref: 'FM26 CA 122' },
+      { id: 'br41', name: 'Marçal', club: 'Botafogo', pos: 'LAT', ovr: 76, ref: 'Botafogo 2026' },
 
-      { id: 'br42', name: 'Gustavo Gómez', club: 'Palmeiras', pos: 'ZAG', ovr: 85, ref: 'FM26 CA 139 • eFB 82' },
-      { id: 'br43', name: 'Léo Ortiz', club: 'Flamengo', pos: 'ZAG', ovr: 84, ref: 'FM26 CA 140 • eFB 81' },
-      { id: 'br44', name: 'Léo Pereira', club: 'Flamengo', pos: 'ZAG', ovr: 84, ref: 'FM26 CA 138 • eFB 81' },
-      { id: 'br45', name: 'Thiago Silva', club: 'Fluminense', pos: 'ZAG', ovr: 84, ref: 'eFB 82' },
-      { id: 'br46', name: 'Fabrício Bruno', club: 'Cruzeiro', pos: 'ZAG', ovr: 83, ref: 'FM26 CA 137 • eFB 81' },
-      { id: 'br47', name: 'Danilo', club: 'Flamengo', pos: 'ZAG', ovr: 83, ref: 'FM26 CA 135' },
+      { id: 'br42', name: 'Gustavo Gómez', club: 'Palmeiras', pos: 'ZAG', ovr: 85, ref: 'FM26 + Série A 2026' },
+      { id: 'br43', name: 'Léo Ortiz', club: 'Flamengo', pos: 'ZAG', ovr: 85, ref: 'Destaque Flamengo 2026' },
+      { id: 'br44', name: 'Léo Pereira', club: 'Flamengo', pos: 'ZAG', ovr: 84, ref: 'Flamengo 2026' },
+      { id: 'br45', name: 'Thiago Silva', club: 'Fluminense', pos: 'ZAG', ovr: 80, ref: 'Fluminense 2026' },
+      { id: 'br46', name: 'Fabrício Bruno', club: 'Cruzeiro', pos: 'ZAG', ovr: 83, ref: 'Cruzeiro 2026' },
+      { id: 'br47', name: 'Danilo', club: 'Flamengo', pos: 'ZAG', ovr: 81, ref: 'Flamengo 2026' },
       { id: 'br48', name: 'Lucas Veríssimo', club: 'Santos', pos: 'ZAG', ovr: 83, ref: 'FM26 CA 135' },
       { id: 'br49', name: 'Alexander Barboza', club: 'Botafogo', pos: 'ZAG', ovr: 82, ref: 'FM26 CA 133' },
       { id: 'br50', name: 'Robert Arboleda', club: 'São Paulo', pos: 'ZAG', ovr: 82, ref: 'FM26 CA 133 • eFB 80' },
-      { id: 'br51', name: 'Gabriel Paulista', club: 'Corinthians', pos: 'ZAG', ovr: 82, ref: 'FM26 CA 133' },
+      { id: 'br51', name: 'Gabriel Paulista', club: 'Corinthians', pos: 'ZAG', ovr: 79, ref: 'Corinthians 2026' },
       { id: 'br52', name: 'Vitão', club: 'Flamengo', pos: 'ZAG', ovr: 82, ref: 'FM26 CA 133' },
       { id: 'br53', name: 'Lyanco', club: 'Atlético-MG', pos: 'ZAG', ovr: 81, ref: 'FM26 CA 131' },
       { id: 'br54', name: 'Nahuel Ferraresi', club: 'Botafogo', pos: 'ZAG', ovr: 81, ref: 'FM26 CA 131 • eFB 79' },
@@ -1267,30 +1043,30 @@
       { id: 'br57', name: 'Bruno Fuchs', club: 'Palmeiras', pos: 'ZAG', ovr: 81, ref: 'FM26 CA 129' },
       { id: 'br58', name: 'Junior Alonso', club: 'Atlético-MG', pos: 'ZAG', ovr: 81, ref: 'FM26 CA 129' },
       { id: 'br59', name: 'Pedro Henrique', club: 'RB Bragantino', pos: 'ZAG', ovr: 81, ref: 'FM26 CA 129' },
-      { id: 'br60', name: 'Gustavo Henrique', club: 'Corinthians', pos: 'ZAG', ovr: 80, ref: 'FM26 CA 128' },
-      { id: 'br61', name: 'Bastos', club: 'Botafogo', pos: 'ZAG', ovr: 80, ref: 'FM26 CA 128' },
-      { id: 'br62', name: 'Guzmán Rodríguez', club: 'RB Bragantino', pos: 'ZAG', ovr: 79, ref: 'FM26 CA 126' },
-      { id: 'br63', name: 'Kaio Pantaleão', club: 'Botafogo', pos: 'ZAG', ovr: 79, ref: 'FM26 CA 125' },
-      { id: 'br64', name: 'Gustavo Marques', club: 'RB Bragantino', pos: 'ZAG', ovr: 79, ref: 'FM26 CA 125' },
-      { id: 'br65', name: 'Robert Renan', club: 'Vasco', pos: 'ZAG', ovr: 79, ref: 'FM26 CA 124' },
+      { id: 'br60', name: 'Gustavo Henrique', club: 'Corinthians', pos: 'ZAG', ovr: 78, ref: 'Corinthians 2026' },
+      { id: 'br61', name: 'Bastos', club: 'Botafogo', pos: 'ZAG', ovr: 78, ref: 'Botafogo 2026' },
+      { id: 'br62', name: 'Guzmán Rodríguez', club: 'RB Bragantino', pos: 'ZAG', ovr: 77, ref: 'RB Bragantino 2026' },
+      { id: 'br63', name: 'Kaio Pantaleão', club: 'Botafogo', pos: 'ZAG', ovr: 77, ref: 'Botafogo 2026' },
+      { id: 'br64', name: 'Gustavo Marques', club: 'RB Bragantino', pos: 'ZAG', ovr: 76, ref: 'RB Bragantino 2026' },
+      { id: 'br65', name: 'Robert Renan', club: 'Vasco', pos: 'ZAG', ovr: 77, ref: 'Vasco 2026' },
 
-      { id: 'br66', name: 'Giorgian de Arrascaeta', club: 'Flamengo', pos: 'MEI', ovr: 86, ref: 'FM26 CA 143 • eFB 82' },
-      { id: 'br67', name: 'Matheus Pereira', club: 'Cruzeiro', pos: 'MEI', ovr: 85, ref: 'FM26 CA 141 • eFB 82' },
-      { id: 'br68', name: 'Lucas Paquetá', club: 'Flamengo', pos: 'MEI', ovr: 85, ref: 'FM26 CA 138 • eFB 82' },
-      { id: 'br69', name: 'Jorginho', club: 'Flamengo', pos: 'MEI', ovr: 84, ref: 'FM26 CA 141 • eFB 80' },
-      { id: 'br70', name: 'Arthur Melo', club: 'Grêmio', pos: 'MEI', ovr: 84, ref: 'FM26 CA 140' },
-      { id: 'br71', name: 'Andreas Pereira', club: 'Palmeiras', pos: 'MEI', ovr: 84, ref: 'FM26 CA 139 • eFB 81' },
-      { id: 'br72', name: 'Gerson', club: 'Cruzeiro', pos: 'MEI', ovr: 84, ref: 'FM26 CA 139 • eFB 81' },
+      { id: 'br66', name: 'Giorgian de Arrascaeta', club: 'Flamengo', pos: 'MEI', ovr: 86, ref: 'Destaque Série A 2026' },
+      { id: 'br67', name: 'Matheus Pereira', club: 'Cruzeiro', pos: 'MEI', ovr: 85, ref: 'Destaque Cruzeiro 2026' },
+      { id: 'br68', name: 'Lucas Paquetá', club: 'Flamengo', pos: 'MEI', ovr: 85, ref: 'Destaque Flamengo 2026' },
+      { id: 'br69', name: 'Jorginho', club: 'Flamengo', pos: 'MEI', ovr: 82, ref: 'Flamengo 2026' },
+      { id: 'br70', name: 'Arthur Melo', club: 'Grêmio', pos: 'MEI', ovr: 80, ref: 'Grêmio 2026' },
+      { id: 'br71', name: 'Andreas Pereira', club: 'Palmeiras', pos: 'MEI', ovr: 84, ref: 'Palmeiras 2026' },
+      { id: 'br72', name: 'Gerson', club: 'Cruzeiro', pos: 'MEI', ovr: 84, ref: 'Cruzeiro 2026' },
       { id: 'br73', name: 'Luciano Acosta', club: 'Fluminense', pos: 'MEI', ovr: 83, ref: 'FM26 CA 137' },
       { id: 'br74', name: 'Matheus Martinelli', club: 'Fluminense', pos: 'MEI', ovr: 83, ref: 'FM26 CA 137' },
-      { id: 'br75', name: 'Rodrigo Garro', club: 'Corinthians', pos: 'MEI', ovr: 83, ref: 'FM26 CA 136' },
-      { id: 'br76', name: 'Saúl Ñíguez', club: 'Flamengo', pos: 'MEI', ovr: 83, ref: 'FM26 CA 136 • eFB 80' },
-      { id: 'br77', name: 'Lucas Moura', club: 'São Paulo', pos: 'MEI', ovr: 83, ref: 'FM26 CA 136 • eFB 79' },
+      { id: 'br75', name: 'Rodrigo Garro', club: 'Corinthians', pos: 'MEI', ovr: 82, ref: 'Corinthians Série A 2026' },
+      { id: 'br76', name: 'Saúl Ñíguez', club: 'Flamengo', pos: 'MEI', ovr: 81, ref: 'Flamengo 2026' },
+      { id: 'br77', name: 'Lucas Moura', club: 'São Paulo', pos: 'MEI', ovr: 83, ref: 'São Paulo 2026' },
       { id: 'br78', name: 'Marcos Antônio', club: 'São Paulo', pos: 'MEI', ovr: 83, ref: 'FM26 CA 136 • eFB 77' },
       { id: 'br79', name: 'Alan Patrick', club: 'Internacional', pos: 'MEI', ovr: 83, ref: 'FM26 CA 135 • eFB 81' },
       { id: 'br80', name: 'Danilo Oliveira', club: 'Botafogo', pos: 'MEI', ovr: 83, ref: 'FM26 CA 135 • eFB 80' },
       { id: 'br81', name: 'Jean Lucas', club: 'Bahia', pos: 'MEI', ovr: 83, ref: 'FM26 CA 135' },
-      { id: 'br82', name: 'Nicolás de la Cruz', club: 'Flamengo', pos: 'MEI', ovr: 83, ref: 'FM26 CA 135 • eFB 79' },
+      { id: 'br82', name: 'Nicolás de la Cruz', club: 'Flamengo', pos: 'MEI', ovr: 82, ref: 'Flamengo 2026' },
       { id: 'br83', name: 'Jefferson Savarino', club: 'Fluminense', pos: 'MEI', ovr: 83, ref: 'FM26 CA 135' },
       { id: 'br84', name: 'Caio Alexandre', club: 'Bahia', pos: 'MEI', ovr: 83, ref: 'FM26 CA 135' },
       { id: 'br85', name: 'Mathías Villasanti', club: 'Grêmio', pos: 'MEI', ovr: 82, ref: 'FM26 CA 134' },
@@ -1306,27 +1082,27 @@
       { id: 'br95', name: 'Benjamín Rollheiser', club: 'Santos', pos: 'MEI', ovr: 81, ref: 'FM26 CA 130' },
       { id: 'br96', name: 'Hércules', club: 'Fluminense', pos: 'MEI', ovr: 81, ref: 'FM26 CA 130' },
       { id: 'br97', name: 'Damián Bobadilla', club: 'São Paulo', pos: 'MEI', ovr: 81, ref: 'FM26 CA 130 • eFB 77' },
-      { id: 'br98', name: 'Cristian Medina', club: 'Botafogo', pos: 'MEI', ovr: 80, ref: 'FM26 CA 128 • eFB 79' },
-      { id: 'br99', name: 'Allan', club: 'Botafogo', pos: 'MEI', ovr: 80, ref: 'FM26 CA 128' },
-      { id: 'br100', name: 'Breno Bidon', club: 'Corinthians', pos: 'MEI', ovr: 80, ref: 'FM26 CA 128' },
-      { id: 'br101', name: 'Philippe Coutinho', club: 'Santos', pos: 'MEI', ovr: 80, ref: 'Série A 2026' },
-      { id: 'br102', name: 'Matheus Fernandes', club: 'RB Bragantino', pos: 'MEI', ovr: 79, ref: 'FM26 CA 126' },
-      { id: 'br103', name: 'Eric Ramires', club: 'RB Bragantino', pos: 'MEI', ovr: 79, ref: 'FM26 CA 126' },
+      { id: 'br98', name: 'Cristian Medina', club: 'Botafogo', pos: 'MEI', ovr: 79, ref: 'Botafogo 2026' },
+      { id: 'br99', name: 'Allan', club: 'Botafogo', pos: 'MEI', ovr: 78, ref: 'Botafogo 2026' },
+      { id: 'br100', name: 'Breno Bidon', club: 'Corinthians', pos: 'MEI', ovr: 78, ref: 'Corinthians 2026' },
+      { id: 'br101', name: 'Philippe Coutinho', club: 'Santos', pos: 'MEI', ovr: 78, ref: 'Santos 2026' },
+      { id: 'br102', name: 'Matheus Fernandes', club: 'RB Bragantino', pos: 'MEI', ovr: 77, ref: 'RB Bragantino 2026' },
+      { id: 'br103', name: 'Eric Ramires', club: 'RB Bragantino', pos: 'MEI', ovr: 77, ref: 'RB Bragantino 2026' },
 
-      { id: 'br104', name: 'Neymar Jr.', club: 'Santos', pos: 'ATA', ovr: 86, ref: 'FM26 CA 145 • eFB 79' },
-      { id: 'br105', name: 'Memphis Depay', club: 'Corinthians', pos: 'ATA', ovr: 86, ref: 'FM26 CA 145 • eFB 82' },
-      { id: 'br106', name: 'Samuel Lino', club: 'Flamengo', pos: 'ATA', ovr: 85, ref: 'FM26 CA 138 • eFB 82' },
-      { id: 'br107', name: 'Pedro', club: 'Flamengo', pos: 'ATA', ovr: 84, ref: 'FM26 CA 140 • eFB 81' },
-      { id: 'br108', name: 'Yuri Alberto', club: 'Corinthians', pos: 'ATA', ovr: 84, ref: 'FM26 CA 140' },
+      { id: 'br104', name: 'Neymar Jr.', club: 'Santos', pos: 'ATA', ovr: 83, ref: 'Retorno de lesão 2026' },
+      { id: 'br105', name: 'Memphis Depay', club: 'Corinthians', pos: 'ATA', ovr: 82, ref: 'Corinthians Série A 2026' },
+      { id: 'br106', name: 'Samuel Lino', club: 'Flamengo', pos: 'ATA', ovr: 84, ref: 'Flamengo 2026' },
+      { id: 'br107', name: 'Pedro', club: 'Flamengo', pos: 'ATA', ovr: 86, ref: 'Artilheiro Série A 2026' },
+      { id: 'br108', name: 'Yuri Alberto', club: 'Corinthians', pos: 'ATA', ovr: 82, ref: 'Corinthians Série A 2026' },
       { id: 'br109', name: 'Luis Sinisterra', club: 'Cruzeiro', pos: 'ATA', ovr: 84, ref: 'FM26 CA 140 • eFB 78' },
-      { id: 'br110', name: 'Jhon Arias', club: 'Palmeiras', pos: 'ATA', ovr: 84, ref: 'FM26 CA 139' },
-      { id: 'br111', name: 'Vitor Roque', club: 'Palmeiras', pos: 'ATA', ovr: 84, ref: 'FM26 CA 139 • eFB 81' },
-      { id: 'br112', name: 'Paulinho', club: 'Palmeiras', pos: 'ATA', ovr: 84, ref: 'FM26 CA 138 • eFB 81' },
-      { id: 'br113', name: 'Hulk', club: 'Fluminense', pos: 'ATA', ovr: 84, ref: 'FM26 CA 136 • eFB 82' },
-      { id: 'br114', name: 'Carlos Vinícius', club: 'Grêmio', pos: 'ATA', ovr: 83, ref: 'FM26 CA 136' },
-      { id: 'br115', name: 'Kaio Jorge', club: 'Cruzeiro', pos: 'ATA', ovr: 83, ref: 'FM26 CA 135 • eFB 80' },
-      { id: 'br116', name: 'Jonathan Calleri', club: 'São Paulo', pos: 'ATA', ovr: 83, ref: 'FM26 CA 135 • eFB 79' },
-      { id: 'br117', name: 'Flaco López', club: 'Palmeiras', pos: 'ATA', ovr: 82, ref: 'FM26 CA 134' },
+      { id: 'br110', name: 'Jhon Arias', club: 'Palmeiras', pos: 'ATA', ovr: 85, ref: 'Destaque Palmeiras 2026' },
+      { id: 'br111', name: 'Vitor Roque', club: 'Palmeiras', pos: 'ATA', ovr: 85, ref: 'Destaque Palmeiras 2026' },
+      { id: 'br112', name: 'Paulinho', club: 'Palmeiras', pos: 'ATA', ovr: 83, ref: 'Palmeiras 2026' },
+      { id: 'br113', name: 'Hulk', club: 'Fluminense', pos: 'ATA', ovr: 81, ref: 'Fluminense 2026' },
+      { id: 'br114', name: 'Carlos Vinícius', club: 'Grêmio', pos: 'ATA', ovr: 81, ref: 'Grêmio 2026' },
+      { id: 'br115', name: 'Kaio Jorge', club: 'Cruzeiro', pos: 'ATA', ovr: 83, ref: 'Cruzeiro 2026' },
+      { id: 'br116', name: 'Jonathan Calleri', club: 'São Paulo', pos: 'ATA', ovr: 83, ref: 'São Paulo 2026' },
+      { id: 'br117', name: 'Flaco López', club: 'Palmeiras', pos: 'ATA', ovr: 84, ref: 'Destaque Palmeiras 2026' },
       { id: 'br118', name: 'Mateo Cassierra', club: 'Atlético-MG', pos: 'ATA', ovr: 82, ref: 'FM26 CA 133' },
       { id: 'br119', name: 'Ramón Sosa', club: 'Palmeiras', pos: 'ATA', ovr: 82, ref: 'FM26 CA 133' },
       { id: 'br120', name: 'Gonzalo Plata', club: 'Flamengo', pos: 'ATA', ovr: 82, ref: 'FM26 CA 132 • eFB 79' },
@@ -1334,25 +1110,26 @@
       { id: 'br122', name: 'Artur', club: 'Botafogo', pos: 'ATA', ovr: 82, ref: 'FM26 CA 132' },
       { id: 'br123', name: 'Agustín Canobbio', club: 'Fluminense', pos: 'ATA', ovr: 82, ref: 'FM26 CA 132' },
       { id: 'br124', name: 'Andrés Gómez', club: 'Vasco', pos: 'ATA', ovr: 82, ref: 'FM26 CA 132' },
-      { id: 'br125', name: 'Gabigol', club: 'Santos', pos: 'ATA', ovr: 81, ref: 'FM26 CA 131' },
-      { id: 'br126', name: 'Rafael Borré', club: 'Internacional', pos: 'ATA', ovr: 81, ref: 'FM26 CA 131' },
-      { id: 'br127', name: 'Joaquín Correa', club: 'Botafogo', pos: 'ATA', ovr: 81, ref: 'FM26 CA 130' },
-      { id: 'br128', name: 'Eduardo Sasha', club: 'RB Bragantino', pos: 'ATA', ovr: 81, ref: 'FM26 CA 130' },
-      { id: 'br129', name: 'Luciano', club: 'São Paulo', pos: 'ATA', ovr: 81, ref: 'FM26 CA 130 • eFB 80' },
-      { id: 'br130', name: 'Everton Cebolinha', club: 'Santos', pos: 'ATA', ovr: 81, ref: 'FM26 CA 130' },
-      { id: 'br131', name: 'Yeferson Soteldo', club: 'Fluminense', pos: 'ATA', ovr: 81, ref: 'FM26 CA 130' },
-      { id: 'br132', name: 'Tetê', club: 'Grêmio', pos: 'ATA', ovr: 81, ref: 'FM26 CA 130' },
-      { id: 'br133', name: 'Isidro Pitta', club: 'RB Bragantino', pos: 'ATA', ovr: 81, ref: 'FM26 CA 129' },
-      { id: 'br134', name: 'Erick Pulga', club: 'Bahia', pos: 'ATA', ovr: 80, ref: 'FM26 CA 129' },
-      { id: 'br135', name: 'Arthur Cabral', club: 'Botafogo', pos: 'ATA', ovr: 80, ref: 'FM26 CA 128 • eFB 79' }
+      { id: 'br125', name: 'Gabigol', club: 'Santos', pos: 'ATA', ovr: 79, ref: 'Santos 2026' },
+      { id: 'br126', name: 'Rafael Borré', club: 'Internacional', pos: 'ATA', ovr: 80, ref: 'Internacional 2026' },
+      { id: 'br127', name: 'Joaquín Correa', club: 'Botafogo', pos: 'ATA', ovr: 79, ref: 'Botafogo 2026' },
+      { id: 'br128', name: 'Eduardo Sasha', club: 'RB Bragantino', pos: 'ATA', ovr: 79, ref: 'RB Bragantino 2026' },
+      { id: 'br129', name: 'Luciano', club: 'São Paulo', pos: 'ATA', ovr: 80, ref: 'São Paulo 2026' },
+      { id: 'br130', name: 'Everton Cebolinha', club: 'Santos', pos: 'ATA', ovr: 79, ref: 'Santos 2026' },
+      { id: 'br131', name: 'Yeferson Soteldo', club: 'Fluminense', pos: 'ATA', ovr: 79, ref: 'Fluminense 2026' },
+      { id: 'br132', name: 'Tetê', club: 'Grêmio', pos: 'ATA', ovr: 79, ref: 'Grêmio 2026' },
+      { id: 'br133', name: 'Isidro Pitta', club: 'RB Bragantino', pos: 'ATA', ovr: 79, ref: 'RB Bragantino 2026' },
+      { id: 'br134', name: 'Erick Pulga', club: 'Bahia', pos: 'ATA', ovr: 82, ref: 'Bahia 2026' },
+      { id: 'br135', name: 'Arthur Cabral', club: 'Botafogo', pos: 'ATA', ovr: 79, ref: 'Botafogo 2026' },
+      { id: 'br136', name: 'Kevin Viveros', club: 'Athletico-PR', pos: 'ATA', ovr: 83, ref: 'Vice-artilheiro Série A 2026' }
     ];
 
     const PLAYERS_EUROPA = [
-      { id: 'eu1', name: 'Thibaut Courtois', club: 'Real Madrid', pos: 'GOL', ovr: 90, ref: 'EA FC 27 • 90' },
-      { id: 'eu2', name: 'Gianluigi Donnarumma', club: 'Manchester City', pos: 'GOL', ovr: 89, ref: 'EA FC 27 • 89' },
-      { id: 'eu3', name: 'David Raya', club: 'Arsenal', pos: 'GOL', ovr: 88, ref: 'EA FC 27 • 88' },
+      { id: 'eu1', name: 'Thibaut Courtois', club: 'Real Madrid', pos: 'GOL', ovr: 89, ref: 'Real Madrid 2026' },
+      { id: 'eu2', name: 'Gianluigi Donnarumma', club: 'Manchester City', pos: 'GOL', ovr: 88, ref: 'Manchester City 2026' },
+      { id: 'eu3', name: 'David Raya', club: 'Arsenal', pos: 'GOL', ovr: 89, ref: 'FIFPRO World11 2026' },
       { id: 'eu4', name: 'Jan Oblak', club: 'Atlético Madrid', pos: 'GOL', ovr: 88, ref: 'EA FC 27 • 88' },
-      { id: 'eu5', name: 'Alisson', club: 'Liverpool', pos: 'GOL', ovr: 87, ref: 'EA FC 27 • 87' },
+      { id: 'eu5', name: 'Alisson', club: 'Liverpool', pos: 'GOL', ovr: 87, ref: 'Liverpool 2026' },
       { id: 'eu6', name: 'Mike Maignan', club: 'Milan', pos: 'GOL', ovr: 87, ref: 'EA FC 27 • 87' },
       { id: 'eu7', name: 'Gregor Kobel', club: 'Borussia Dortmund', pos: 'GOL', ovr: 87, ref: 'EA FC 27 • 87' },
       { id: 'eu8', name: 'Joan García', club: 'Barcelona', pos: 'GOL', ovr: 86, ref: 'EA FC 27 • 86' },
@@ -1367,10 +1144,10 @@
       { id: 'eu17', name: 'David De Gea', club: 'Fiorentina', pos: 'GOL', ovr: 83, ref: 'EA FC 27 • 83' },
       { id: 'eu18', name: 'Ederson', club: 'Fenerbahçe', pos: 'GOL', ovr: 82, ref: 'EA FC 27 • 82' },
       { id: 'eu19', name: 'Marc-André ter Stegen', club: 'Ajax', pos: 'GOL', ovr: 82, ref: 'EA FC 27 • 82' },
-      { id: 'eu20', name: 'Manuel Neuer', club: 'Bayern Munich', pos: 'GOL', ovr: 81, ref: 'EA FC 27 • 81' },
+      { id: 'eu20', name: 'Manuel Neuer', club: 'Bayern Munich', pos: 'GOL', ovr: 81, ref: 'Bayern Munich 2026' },
 
-      { id: 'eu21', name: 'Nuno Mendes', club: 'PSG', pos: 'LAT', ovr: 89, ref: 'EA FC 27 • 89' },
-      { id: 'eu22', name: 'Achraf Hakimi', club: 'PSG', pos: 'LAT', ovr: 88, ref: 'EA FC 27 • 88' },
+      { id: 'eu21', name: 'Nuno Mendes', club: 'PSG', pos: 'LAT', ovr: 89, ref: 'FIFPRO World11 2026' },
+      { id: 'eu22', name: 'Achraf Hakimi', club: 'PSG', pos: 'LAT', ovr: 89, ref: 'FIFPRO World11 2026' },
       { id: 'eu23', name: 'Joshua Kimmich', club: 'Bayern Munich', pos: 'LAT', ovr: 88, ref: 'EA FC 27 • 88' },
       { id: 'eu24', name: 'Marc Cucurella', club: 'Real Madrid', pos: 'LAT', ovr: 86, ref: 'EA FC 27 • 86' },
       { id: 'eu25', name: 'Federico Dimarco', club: 'Atalanta', pos: 'LAT', ovr: 86, ref: 'EA FC 27 • 86' },
@@ -1394,16 +1171,16 @@
       { id: 'eu43', name: 'Benjamin White', club: 'Arsenal', pos: 'LAT', ovr: 81, ref: 'EA FC 27 • 81' },
       { id: 'eu44', name: 'Noussair Mazraoui', club: 'Manchester United', pos: 'LAT', ovr: 80, ref: 'EA FC 27 • 80' },
 
-      { id: 'eu45', name: 'Gabriel Magalhães', club: 'Arsenal', pos: 'ZAG', ovr: 89, ref: 'EA FC 27 • 89' },
+      { id: 'eu45', name: 'Gabriel Magalhães', club: 'Arsenal', pos: 'ZAG', ovr: 89, ref: 'Arsenal 2026' },
       { id: 'eu46', name: 'Willian Pacho', club: 'PSG', pos: 'ZAG', ovr: 89, ref: 'EA FC 27 • 89' },
-      { id: 'eu47', name: 'William Saliba', club: 'Arsenal', pos: 'ZAG', ovr: 88, ref: 'EA FC 27 • 88' },
+      { id: 'eu47', name: 'William Saliba', club: 'Arsenal', pos: 'ZAG', ovr: 88, ref: 'Arsenal 2026' },
       { id: 'eu48', name: 'Virgil van Dijk', club: 'Liverpool', pos: 'ZAG', ovr: 88, ref: 'EA FC 27 • 88' },
       { id: 'eu49', name: 'Rúben Dias', club: 'Manchester City', pos: 'ZAG', ovr: 87, ref: 'EA FC 27 • 87' },
       { id: 'eu50', name: 'Marquinhos', club: 'PSG', pos: 'ZAG', ovr: 87, ref: 'EA FC 27 • 87' },
       { id: 'eu51', name: 'Jonathan Tah', club: 'Bayern Munich', pos: 'ZAG', ovr: 87, ref: 'EA FC 27 • 87' },
       { id: 'eu52', name: 'Dayot Upamecano', club: 'Bayern Munich', pos: 'ZAG', ovr: 87, ref: 'EA FC 27 • 87' },
       { id: 'eu53', name: 'Nico Schlotterbeck', club: 'Borussia Dortmund', pos: 'ZAG', ovr: 87, ref: 'EA FC 27 • 87' },
-      { id: 'eu54', name: 'Pau Cubarsí', club: 'Barcelona', pos: 'ZAG', ovr: 86, ref: 'EA FC 27 • 86' },
+      { id: 'eu54', name: 'Pau Cubarsí', club: 'Barcelona', pos: 'ZAG', ovr: 87, ref: 'FIFPRO World11 2026' },
       { id: 'eu55', name: 'Bremer', club: 'Juventus', pos: 'ZAG', ovr: 86, ref: 'EA FC 27 • 86' },
       { id: 'eu56', name: 'Alessandro Bastoni', club: 'Inter', pos: 'ZAG', ovr: 86, ref: 'EA FC 27 • 86' },
       { id: 'eu57', name: 'Joško Gvardiol', club: 'Manchester City', pos: 'ZAG', ovr: 85, ref: 'EA FC 27 • 85' },
@@ -1419,13 +1196,13 @@
       { id: 'eu67', name: 'Murillo', club: 'Nottingham Forest', pos: 'ZAG', ovr: 82, ref: 'EA FC 27 • 82' },
       { id: 'eu68', name: 'Lisandro Martínez', club: 'Manchester United', pos: 'ZAG', ovr: 82, ref: 'EA FC 27 • 82' },
 
-      { id: 'eu69', name: 'Rodri', club: 'Barcelona', pos: 'MEI', ovr: 90, ref: 'EA FC 27 • 90' },
-      { id: 'eu70', name: 'Pedri', club: 'Barcelona', pos: 'MEI', ovr: 90, ref: 'EA FC 27 • 90' },
-      { id: 'eu71', name: 'Vitinha', club: 'PSG', pos: 'MEI', ovr: 90, ref: 'EA FC 27 • 90' },
-      { id: 'eu72', name: 'Jude Bellingham', club: 'Real Madrid', pos: 'MEI', ovr: 90, ref: 'EA FC 27 • 90' },
+      { id: 'eu69', name: 'Rodri', club: 'Barcelona', pos: 'MEI', ovr: 90, ref: '4º Bola de Ouro 2026' },
+      { id: 'eu70', name: 'Pedri', club: 'Barcelona', pos: 'MEI', ovr: 90, ref: 'Barcelona 2026' },
+      { id: 'eu71', name: 'Vitinha', club: 'PSG', pos: 'MEI', ovr: 90, ref: 'FIFPRO World11 2026' },
+      { id: 'eu72', name: 'Jude Bellingham', club: 'Real Madrid', pos: 'MEI', ovr: 89, ref: 'FIFPRO World11 2026' },
       { id: 'eu73', name: 'Bruno Fernandes', club: 'Manchester United', pos: 'MEI', ovr: 89, ref: 'EA FC 27 • 89' },
-      { id: 'eu74', name: 'Lionel Messi', club: 'Inter Miami CF', pos: 'MEI', ovr: 89, ref: 'EA FC 27 • 89' },
-      { id: 'eu75', name: 'Declan Rice', club: 'Arsenal', pos: 'MEI', ovr: 88, ref: 'EA FC 27 • 88' },
+      { id: 'eu74', name: 'Lionel Messi', club: 'Inter Miami CF', pos: 'MEI', ovr: 88, ref: '5º Bola de Ouro 2026' },
+      { id: 'eu75', name: 'Declan Rice', club: 'Arsenal', pos: 'MEI', ovr: 88, ref: 'Arsenal 2026' },
       { id: 'eu76', name: 'João Neves', club: 'PSG', pos: 'MEI', ovr: 88, ref: 'EA FC 27 • 88' },
       { id: 'eu77', name: 'Federico Valverde', club: 'Real Madrid', pos: 'MEI', ovr: 87, ref: 'EA FC 27 • 87' },
       { id: 'eu78', name: 'Jamal Musiala', club: 'Bayern Munich', pos: 'MEI', ovr: 87, ref: 'EA FC 27 • 87' },
@@ -1434,11 +1211,11 @@
       { id: 'eu81', name: 'Florian Wirtz', club: 'Liverpool', pos: 'MEI', ovr: 86, ref: 'EA FC 27 • 86' },
       { id: 'eu82', name: 'Martin Ødegaard', club: 'Arsenal', pos: 'MEI', ovr: 86, ref: 'EA FC 27 • 86' },
       { id: 'eu83', name: 'Bruno Guimarães', club: 'Arsenal', pos: 'MEI', ovr: 86, ref: 'EA FC 27 • 86' },
-      { id: 'eu84', name: 'Fabián Ruiz', club: 'PSG', pos: 'MEI', ovr: 86, ref: 'EA FC 27 • 86' },
+      { id: 'eu84', name: 'Fabián Ruiz', club: 'PSG', pos: 'MEI', ovr: 88, ref: '10º Bola de Ouro 2026' },
       { id: 'eu85', name: 'Scott McTominay', club: 'Napoli', pos: 'MEI', ovr: 86, ref: 'EA FC 27 • 86' },
       { id: 'eu86', name: 'Enzo Fernández', club: 'Chelsea', pos: 'MEI', ovr: 86, ref: 'EA FC 27 • 86' },
       { id: 'eu87', name: 'Cole Palmer', club: 'Chelsea', pos: 'MEI', ovr: 85, ref: 'EA FC 27 • 85' },
-      { id: 'eu88', name: 'Luka Modrić', club: 'Milan', pos: 'MEI', ovr: 85, ref: 'EA FC 27 • 85' },
+      { id: 'eu88', name: 'Luka Modrić', club: 'Milan', pos: 'MEI', ovr: 83, ref: 'Milan 2026' },
       { id: 'eu89', name: 'Adrien Rabiot', club: 'Milan', pos: 'MEI', ovr: 85, ref: 'EA FC 27 • 85' },
       { id: 'eu90', name: 'Youri Tielemans', club: 'Manchester United', pos: 'MEI', ovr: 85, ref: 'EA FC 27 • 85' },
       { id: 'eu91', name: 'Felix Nmecha', club: 'Borussia Dortmund', pos: 'MEI', ovr: 85, ref: 'EA FC 27 • 85' },
@@ -1451,18 +1228,18 @@
       { id: 'eu98', name: 'Gavi', club: 'Barcelona', pos: 'MEI', ovr: 83, ref: 'EA FC 27 • 83' },
       { id: 'eu99', name: 'Exequiel Palacios', club: 'Bayer Leverkusen', pos: 'MEI', ovr: 83, ref: 'EA FC 27 • 83' },
 
-      { id: 'eu100', name: 'Kylian Mbappé', club: 'Real Madrid', pos: 'ATA', ovr: 91, ref: 'EA FC 27 • 91' },
-      { id: 'eu101', name: 'Erling Haaland', club: 'Manchester City', pos: 'ATA', ovr: 91, ref: 'EA FC 27 • 91' },
-      { id: 'eu102', name: 'Lamine Yamal', club: 'Barcelona', pos: 'ATA', ovr: 90, ref: 'EA FC 27 • 90' },
-      { id: 'eu103', name: 'Harry Kane', club: 'Bayern Munich', pos: 'ATA', ovr: 90, ref: 'EA FC 27 • 90' },
-      { id: 'eu104', name: 'Ousmane Dembélé', club: 'PSG', pos: 'ATA', ovr: 90, ref: 'EA FC 27 • 90' },
-      { id: 'eu105', name: 'Michael Olise', club: 'Bayern Munich', pos: 'ATA', ovr: 90, ref: 'EA FC 27 • 90' },
-      { id: 'eu106', name: 'Vini Jr.', club: 'Real Madrid', pos: 'ATA', ovr: 89, ref: 'EA FC 27 • 89' },
-      { id: 'eu107', name: 'Khvicha Kvaratskhelia', club: 'PSG', pos: 'ATA', ovr: 89, ref: 'EA FC 27 • 89' },
-      { id: 'eu108', name: 'Raphinha', club: 'Barcelona', pos: 'ATA', ovr: 88, ref: 'EA FC 27 • 88' },
+      { id: 'eu100', name: 'Kylian Mbappé', club: 'Real Madrid', pos: 'ATA', ovr: 91, ref: '2º Bola de Ouro 2026' },
+      { id: 'eu101', name: 'Erling Haaland', club: 'Manchester City', pos: 'ATA', ovr: 90, ref: '8º Bola de Ouro 2026' },
+      { id: 'eu102', name: 'Lamine Yamal', club: 'Barcelona', pos: 'ATA', ovr: 91, ref: '3º Bola de Ouro 2026' },
+      { id: 'eu103', name: 'Harry Kane', club: 'Bayern Munich', pos: 'ATA', ovr: 91, ref: 'Bola de Ouro 2026' },
+      { id: 'eu104', name: 'Ousmane Dembélé', club: 'PSG', pos: 'ATA', ovr: 90, ref: '7º Bola de Ouro 2026' },
+      { id: 'eu105', name: 'Michael Olise', club: 'Bayern Munich', pos: 'ATA', ovr: 90, ref: '9º Bola de Ouro 2026' },
+      { id: 'eu106', name: 'Vini Jr.', club: 'Real Madrid', pos: 'ATA', ovr: 89, ref: 'Real Madrid 2026' },
+      { id: 'eu107', name: 'Khvicha Kvaratskhelia', club: 'PSG', pos: 'ATA', ovr: 89, ref: '6º Bola de Ouro 2026' },
+      { id: 'eu108', name: 'Raphinha', club: 'Barcelona', pos: 'ATA', ovr: 88, ref: 'Barcelona 2026' },
       { id: 'eu109', name: 'Luis Díaz', club: 'Bayern Munich', pos: 'ATA', ovr: 88, ref: 'EA FC 27 • 88' },
-      { id: 'eu110', name: 'Bukayo Saka', club: 'Arsenal', pos: 'ATA', ovr: 87, ref: 'EA FC 27 • 87' },
-      { id: 'eu111', name: 'Mohamed Salah', club: 'Trabzonspor', pos: 'ATA', ovr: 87, ref: 'EA FC 27 • 87' },
+      { id: 'eu110', name: 'Bukayo Saka', club: 'Arsenal', pos: 'ATA', ovr: 88, ref: 'Arsenal 2026' },
+      { id: 'eu111', name: 'Mohamed Salah', club: 'Trabzonspor', pos: 'ATA', ovr: 86, ref: '2026/27' },
       { id: 'eu112', name: 'Lautaro Martínez', club: 'Inter', pos: 'ATA', ovr: 87, ref: 'EA FC 27 • 87' },
       { id: 'eu113', name: 'Alexander Isak', club: 'Liverpool', pos: 'ATA', ovr: 86, ref: 'EA FC 27 • 86' },
       { id: 'eu114', name: 'Viktor Gyökeres', club: 'Arsenal', pos: 'ATA', ovr: 86, ref: 'EA FC 27 • 86' },
@@ -1474,8 +1251,8 @@
       { id: 'eu120', name: 'Antoine Griezmann', club: 'Orlando City', pos: 'ATA', ovr: 84, ref: 'EA FC 27 • 84' },
       { id: 'eu121', name: 'Ferran Torres', club: 'PSG', pos: 'ATA', ovr: 84, ref: 'EA FC 27 • 84' },
       { id: 'eu122', name: 'Mikel Oyarzabal', club: 'Real Sociedad', pos: 'ATA', ovr: 84, ref: 'EA FC 27 • 84' },
-      { id: 'eu123', name: 'Robert Lewandowski', club: 'Chicago Fire', pos: 'ATA', ovr: 84, ref: 'EA FC 27 • 84' },
-      { id: 'eu124', name: 'Cristiano Ronaldo', club: 'Al Nassr', pos: 'ATA', ovr: 84, ref: 'EA FC 27 • 84' },
+      { id: 'eu123', name: 'Robert Lewandowski', club: 'Chicago Fire', pos: 'ATA', ovr: 83, ref: '2026/27' },
+      { id: 'eu124', name: 'Cristiano Ronaldo', club: 'Al Nassr', pos: 'ATA', ovr: 83, ref: 'Al Nassr 2026' },
       { id: 'eu125', name: 'Ollie Watkins', club: 'Aston Villa', pos: 'ATA', ovr: 83, ref: 'EA FC 27 • 83' },
       { id: 'eu126', name: 'João Pedro', club: 'Chelsea', pos: 'ATA', ovr: 83, ref: 'EA FC 27 • 83' },
       { id: 'eu127', name: 'Ademola Lookman', club: 'Atlético Madrid', pos: 'ATA', ovr: 83, ref: 'EA FC 27 • 83' }
@@ -1961,7 +1738,7 @@
 
       openRoomAsHost(code) {
         this.cleanupConnections();
-        if (window.FIFOOT_WS_ADAPTER && window.FIFOOT_WS_ADAPTER.isConnected()) {
+        if (window.FIFOOT_WS_ADAPTER && (window.FIFOOT_WS_ADAPTER.isAvailable ? window.FIFOOT_WS_ADAPTER.isAvailable() : window.FIFOOT_WS_ADAPTER.isConnected())) {
           window.FIFOOT_WS_ADAPTER.hostRoom(code, room);
           this.setBadge('SERVER', 'Servidor Oficial Online');
           return;
@@ -1972,7 +1749,7 @@
         }
         try {
           this.setBadge('CONNECTING', 'Abrindo sala online...');
-          const p = new window.Peer(this.roomPeerId(code));
+          const p = new window.Peer(this.roomPeerId(code), { config: { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] } });
           this.peer = p;
           p.on('open', () => {
             this.setBadge('WEBRTC', 'Sala Online Ativa');
@@ -2000,7 +1777,7 @@
 
       connectToRemoteRoom(code, onNotFound) {
         this.cleanupConnections();
-        if (window.FIFOOT_WS_ADAPTER && window.FIFOOT_WS_ADAPTER.isConnected()) {
+        if (window.FIFOOT_WS_ADAPTER && (window.FIFOOT_WS_ADAPTER.isAvailable ? window.FIFOOT_WS_ADAPTER.isAvailable() : window.FIFOOT_WS_ADAPTER.isConnected())) {
           this.setBadge('CONNECTING', 'Entrando na sala...');
           window.FIFOOT_WS_ADAPTER.joinRoom(code, {
             clientId: Client.id,
@@ -2017,7 +1794,7 @@
         try {
           this.setBadge('CONNECTING', 'Conectando à sala ' + code + '...');
           toast('Buscando sala online ' + code + '...');
-          const p = new window.Peer();
+          const p = new window.Peer({ config: { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] } });
           this.peer = p;
           let settled = false;
           this.joiningTimer = setTimeout(() => {
@@ -2027,7 +1804,7 @@
               this.probeReadiness();
               if (onNotFound) onNotFound('Sala ' + code + ' não encontrada ou host offline.');
             }
-          }, 6500);
+          }, 12000);
 
           p.on('open', () => {
             const conn = p.connect(this.roomPeerId(code), { reliable: true });
@@ -2082,7 +1859,7 @@
         this.guestConns.forEach((conn) => {
           try { if (conn && conn.open) conn.send(packet); } catch (e) {}
         });
-        if (window.FIFOOT_WS_ADAPTER && window.FIFOOT_WS_ADAPTER.isConnected()) {
+        if (window.FIFOOT_WS_ADAPTER && (window.FIFOOT_WS_ADAPTER.isAvailable ? window.FIFOOT_WS_ADAPTER.isAvailable() : window.FIFOOT_WS_ADAPTER.isConnected())) {
           window.FIFOOT_WS_ADAPTER.broadcastFromHost(room.code, packet, room);
         }
         if (netChannel) {
@@ -2091,7 +1868,7 @@
       },
 
       sendToHost(packet) {
-        if (window.FIFOOT_WS_ADAPTER && window.FIFOOT_WS_ADAPTER.isConnected()) {
+        if (window.FIFOOT_WS_ADAPTER && (window.FIFOOT_WS_ADAPTER.isAvailable ? window.FIFOOT_WS_ADAPTER.isAvailable() : window.FIFOOT_WS_ADAPTER.isConnected())) {
           window.FIFOOT_WS_ADAPTER.sendToHost(room ? room.code : packet.code, packet);
           return;
         }
@@ -2141,7 +1918,7 @@
           }
           const existing = room.managers.find(m => m.id === data.clientId);
           if (room.stage !== 'lobby' && !existing) {
-            const rej = { type: 'JOIN_REJECTED', code: room.code, reason: 'Esta sala já iniciou o sorteio.' };
+            const rej = { type: 'JOIN_REJECTED', code: room.code, targetId: data.clientId, reason: 'Esta sala já iniciou o sorteio.' };
             if (conn && conn.open) conn.send(rej);
             else this.broadcastFromHost(rej);
             return;
@@ -2171,6 +1948,7 @@
           }
           const acc = { type: 'JOIN_ACCEPTED', code: room.code, targetId: data.clientId, room };
           if (conn && conn.open) conn.send(acc);
+          else this.broadcastFromHost(acc);
           saveRoomAndBroadcast();
           render();
           return;
@@ -2190,6 +1968,7 @@
         if (!data) return;
 
         if (data.type === 'JOIN_REJECTED') {
+          if (data.targetId && data.targetId !== Client.id) return;
           this.cleanupConnections();
           this.probeReadiness();
           toast(data.reason || 'Não foi possível entrar na sala.');
@@ -2198,6 +1977,15 @@
 
         if (data.type === 'JOIN_ACCEPTED') {
           if (data.targetId && data.targetId !== Client.id) return;
+          room = data.room;
+          this.setBadge(window.FIFOOT_WS_ADAPTER && window.FIFOOT_WS_ADAPTER.isConnected() ? 'SERVER' : 'WEBRTC', 'Conectado na Sala');
+          syncScreenToRoomStage();
+          render();
+          toast('Conectado à sala ' + room.code + '!');
+          return;
+        }
+
+        if (!room && data.type === 'ROOM_SYNC' && data.room && Array.isArray(data.room.managers) && data.room.managers.some(m => m.id === Client.id)) {
           room = data.room;
           this.setBadge(window.FIFOOT_WS_ADAPTER && window.FIFOOT_WS_ADAPTER.isConnected() ? 'SERVER' : 'WEBRTC', 'Conectado na Sala');
           syncScreenToRoomStage();
@@ -3206,6 +2994,36 @@
       toast((replacingId ? 'Contraproposta enviada para ' : 'Proposta enviada para ') + partner.name + '!');
     }
 
+    function simulateTeamXiAfterTrade(mgr, outUids, inPlayers) {
+      const clone = {
+        formation: mgr.formation || '4-3-3',
+        roster: mgr.roster.filter(p => !outUids.includes(p.uid)).concat(inPlayers),
+        lineupIds: []
+      };
+      autoLineup(clone);
+      return teamAvgOvr(clone);
+    }
+
+    function analyzeSquadNeeds(mgr) {
+      if (mgr.lineupIds.length !== 11) autoLineup(mgr);
+      const slots = FORMATIONS[mgr.formation || '4-3-3'];
+      const starterEntries = slots.map((s, i) => {
+        const p = mgr.roster.find(x => x.uid === mgr.lineupIds[i]);
+        return { role: s.role, p, eff: p ? slotEffectiveOvr(p, s.role) : 60 };
+      }).filter(e => e.p);
+
+      // Weakest non-GK starter position is top need
+      const fieldStarters = starterEntries.filter(e => e.role !== 'GOL').sort((a, b) => a.eff - b.eff);
+      const weakestPos = fieldStarters[0] ? fieldStarters[0].role : 'MEI';
+      const weakestOvr = fieldStarters[0] ? fieldStarters[0].eff : 78;
+
+      // Surplus: strong bench players or second-best in a deep position
+      const bench = mgr.roster.filter(p => !mgr.lineupIds.includes(p.uid) && p.pos !== 'GOL').sort((a, b) => b.ovr - a.ovr);
+      const posCounts = { GOL: 0, LAT: 0, ZAG: 0, MEI: 0, ATA: 0 };
+      mgr.roster.forEach(p => { if (posCounts[p.pos] !== undefined) posCounts[p.pos]++; });
+      return { weakestPos, weakestOvr, bench, posCounts, avgXi: teamAvgOvr(mgr) };
+    }
+
     function evaluateIncomingByPeer(offerId) {
       if (!room || room.stage !== 'market') return;
       const offer = room.market.offers.find(o => o.id === offerId);
@@ -3218,34 +3036,83 @@
       const askP = offer.askUids.map(u => peer.roster.find(x => x.uid === u)).filter(Boolean);
       if (!sendP.length || !askP.length) return;
 
-      const wSend = sendP.reduce((s, p) => s + marketWeight(p.ovr), 0);
+      const chk = validateSwapRosters(proposer, offer.sendUids, askP, peer, offer.askUids, sendP);
+      if (!chk.ok) {
+        room.market.offers = room.market.offers.filter(o => o.id !== offer.id);
+        toast(peer.name + ' recusou: ' + chk.msg);
+        saveRoomAndBroadcast();
+        render();
+        return;
+      }
+
+      const needs = analyzeSquadNeeds(peer);
+      const xiAfter = simulateTeamXiAfterTrade(peer, offer.askUids, sendP);
+      const xiDelta = xiAfter - needs.avgXi;
+
+      const wSend = sendP.reduce((s, p) => s + marketWeight(p.ovr) * (p.pos === needs.weakestPos ? 1.12 : 1.0), 0);
       const wAsk = askP.reduce((s, p) => s + marketWeight(p.ovr), 0);
       const hasUntouchable = askP.some(p => p.status === 'UNTOUCHABLE');
       const allListed = askP.every(p => p.status === 'LISTED');
 
-      let reqMult = hasUntouchable ? 1.22 : (allListed ? 0.92 : 1.0);
-      if (sendP.length > askP.length) {
+      let reqMult = hasUntouchable ? 1.18 : (allListed ? 0.90 : 0.98);
+      if (xiDelta >= 0.3) reqMult -= 0.10;
+      else if (xiDelta <= -0.5) reqMult += 0.14;
+
+      // Penalize bloated junk packages (e.g. 4 bench players for 1 superstar) unless XI actually improves
+      if (sendP.length > askP.length && xiDelta < 0.1) {
         const topS = Math.max(...sendP.map(p => p.ovr));
         const topA = Math.max(...askP.map(p => p.ovr));
-        if (topA - topS >= 4) reqMult += 0.20;
+        if (topA - topS >= 3) reqMult += 0.18;
       }
 
-      if (wSend >= wAsk * reqMult) {
+      if (wSend >= wAsk * reqMult || (xiDelta >= 0.35 && wSend >= wAsk * 0.85)) {
         executeOnlineTrade(offer);
         toast(peer.name + ' aceitou sua proposta de troca!');
         return;
       }
 
-      // Reject, and build a free multi-player counteroffer (no player count limit!)
+      // Build an intelligent, free counteroffer tailored to CPU's actual squad need (1x1, 2x2, 1x2, etc.)
       room.market.offers = room.market.offers.filter(o => o.id !== offer.id);
       const deficit = (wAsk * reqMult) - wSend;
-      const availableExtras = proposer.roster
+
+      // Strategy A: Try a clean 1x1 or same-size swap by targeting a player of proposer matching CPU's weakestPos & value
+      const propPool = proposer.roster.filter(p => p.pos !== 'GOL').sort((a, b) => b.ovr - a.ovr);
+      const directMatch = askP.length === 1
+        ? propPool.find(p => p.pos === needs.weakestPos && Math.abs(p.ovr - askP[0].ovr) <= 2 && !offer.sendUids.includes(p.uid))
+        : null;
+
+      if (directMatch) {
+        const chkDirect = validateSwapRosters(peer, offer.askUids, [directMatch], proposer, [directMatch.uid], askP);
+        if (chkDirect.ok) {
+          room.market.offers.unshift({
+            id: 'of_cnt_' + Date.now(),
+            fromId: peer.id,
+            toId: proposer.id,
+            sendUids: [...offer.askUids],
+            askUids: [directMatch.uid],
+            status: 'PENDING',
+            note: 'Contraproposta de ' + peer.name + ' (precisa de ' + needs.weakestPos + ')'
+          });
+          Client.ui.mktTab = 'INBOX';
+          toast(peer.name + ' sugeriu troca direta por ' + directMatch.name + '!');
+          saveRoomAndBroadcast();
+          render();
+          return;
+        }
+      }
+
+      // Strategy B: Free counteroffer adding needed piece(s) or sweetening with a CPU bench piece for a balanced package
+      const candidates = proposer.roster
         .filter(p => !offer.sendUids.includes(p.uid) && p.pos !== 'GOL')
-        .sort((a, b) => b.ovr - a.ovr);
+        .sort((a, b) => {
+          const aNeed = a.pos === needs.weakestPos ? 4 : 0;
+          const bNeed = b.pos === needs.weakestPos ? 4 : 0;
+          return (b.ovr + bNeed) - (a.ovr + aNeed);
+        });
 
       const addedUids = [];
       let addedWeight = 0;
-      for (const cand of availableExtras) {
+      for (const cand of candidates) {
         if (addedWeight >= deficit * 0.85) break;
         const testAskUids = [...offer.sendUids, ...addedUids, cand.uid];
         const testAskP = testAskUids.map(u => proposer.roster.find(x => x.uid === u)).filter(Boolean);
@@ -3256,15 +3123,22 @@
         }
       }
 
+      // Optionally include a CPU bench player to make it a fair 2x2 instead of always asking for extras for nothing
+      const cpuSendUids = [...offer.askUids];
+      if (addedUids.length >= 1 && needs.bench.length > 0 && addedWeight > deficit * 1.25) {
+        const sweet = needs.bench.find(b => !cpuSendUids.includes(b.uid));
+        if (sweet) cpuSendUids.push(sweet.uid);
+      }
+
       if (addedUids.length > 0 && addedWeight >= deficit * 0.6) {
         room.market.offers.unshift({
           id: 'of_cnt_' + Date.now(),
           fromId: peer.id,
           toId: proposer.id,
-          sendUids: [...offer.askUids],
+          sendUids: cpuSendUids,
           askUids: [...offer.sendUids, ...addedUids],
           status: 'PENDING',
-          note: 'Contraproposta de ' + peer.name
+          note: 'Contraproposta livre de ' + peer.name
         });
         Client.ui.mktTab = 'INBOX';
         toast(peer.name + ' recusou e enviou uma contraproposta!');
@@ -3275,33 +3149,123 @@
       render();
     }
 
+    function buildSmartCpuProposal(cpu, target) {
+      const cpuNeeds = analyzeSquadNeeds(cpu);
+      const tgtNeeds = analyzeSquadNeeds(target);
+
+      const cpuField = cpu.roster.filter(p => p.pos !== 'GOL').sort((a, b) => b.ovr - a.ovr);
+      const tgtField = target.roster.filter(p => p.pos !== 'GOL').sort((a, b) => b.ovr - a.ovr);
+      if (cpuField.length < 4 || tgtField.length < 4) return null;
+
+      // Pick a target player that actually upgrades CPU's weakest position (preferring LISTED players!)
+      const desiredTarget =
+        tgtField.find(p => p.pos === cpuNeeds.weakestPos && p.status === 'LISTED' && p.ovr > cpuNeeds.weakestOvr) ||
+        tgtField.find(p => p.pos === cpuNeeds.weakestPos && p.ovr > cpuNeeds.weakestOvr) ||
+        tgtField.find(p => p.status === 'LISTED') ||
+        tgtField[Math.floor(Math.random() * Math.min(4, tgtField.length))];
+      if (!desiredTarget) return null;
+
+      // Pick proposal style naturally: 1x1 positional (50%), 2x2 balanced (25%), 1x2 depth (15%), 2x1 superstar chase (10%)
+      const roll = Math.random();
+
+      // 1. Clean 1x1 positional swap (CPU offers a player who helps target's weakest position or matches OVR)
+      if (roll < 0.52) {
+        const offer1 =
+          cpuField.find(p => p.pos === tgtNeeds.weakestPos && Math.abs(p.ovr - desiredTarget.ovr) <= 2) ||
+          cpuField.find(p => p.pos !== desiredTarget.pos && Math.abs(p.ovr - desiredTarget.ovr) <= 1) ||
+          cpuField.find(p => Math.abs(p.ovr - desiredTarget.ovr) <= 2);
+        if (offer1) {
+          const chk = validateSwapRosters(cpu, [offer1.uid], [desiredTarget], target, [desiredTarget.uid], [offer1]);
+          if (chk.ok) {
+            return {
+              sendUids: [offer1.uid],
+              askUids: [desiredTarget.uid],
+              note: cpu.name + ' propõe troca direta 1x1 (' + offer1.pos + ' por ' + desiredTarget.pos + ').'
+            };
+          }
+        }
+      }
+
+      // 2. Balanced 2x2 package
+      if (roll < 0.78) {
+        const cpuA = cpuField.find(p => p.pos === tgtNeeds.weakestPos && Math.abs(p.ovr - desiredTarget.ovr) <= 2) || cpuField[1];
+        const cpuB = cpuNeeds.bench.find(b => b.uid !== cpuA.uid) || cpuField[cpuField.length - 2];
+        const tgtB = tgtField.find(p => p.uid !== desiredTarget.uid && Math.abs(p.ovr - cpuB.ovr) <= 2) || tgtField[tgtField.length - 2];
+        if (cpuA && cpuB && tgtB && cpuA.uid !== cpuB.uid && desiredTarget.uid !== tgtB.uid) {
+          const chk = validateSwapRosters(cpu, [cpuA.uid, cpuB.uid], [desiredTarget, tgtB], target, [desiredTarget.uid, tgtB.uid], [cpuA, cpuB]);
+          if (chk.ok) {
+            return {
+              sendUids: [cpuA.uid, cpuB.uid],
+              askUids: [desiredTarget.uid, tgtB.uid],
+              note: cpu.name + ' propõe troca 2x2 para reforçar ' + cpuNeeds.weakestPos + '.'
+            };
+          }
+        }
+      }
+
+      // 3. 1x2 (CPU offers 1 stronger player for 2 solid squad players)
+      if (roll < 0.90) {
+        const cpuStar = cpuField[1];
+        const tgtPairs = tgtField.filter(p => p.ovr <= cpuStar.ovr - 1 && p.ovr >= cpuStar.ovr - 4);
+        if (cpuStar && tgtPairs.length >= 2) {
+          const chk = validateSwapRosters(cpu, [cpuStar.uid], [tgtPairs[0], tgtPairs[1]], target, [tgtPairs[0].uid, tgtPairs[1].uid], [cpuStar]);
+          if (chk.ok) {
+            return {
+              sendUids: [cpuStar.uid],
+              askUids: [tgtPairs[0].uid, tgtPairs[1].uid],
+              note: cpu.name + ' oferece ' + cpuStar.name + ' (' + cpuStar.ovr + ') por dois atletas do seu elenco.'
+            };
+          }
+        }
+      }
+
+      // 4. Occasional 2x1 when chasing an elite star
+      const starTarget = tgtField[0];
+      const pkg = cpuField.filter(p => p.ovr < starTarget.ovr && p.ovr >= starTarget.ovr - 4).slice(0, 2);
+      if (pkg.length === 2) {
+        const chk = validateSwapRosters(cpu, pkg.map(x => x.uid), [starTarget], target, [starTarget.uid], pkg);
+        if (chk.ok) {
+          return {
+            sendUids: pkg.map(x => x.uid),
+            askUids: [starTarget.uid],
+            note: cpu.name + ' montou pacote 2x1 tentando contratar ' + starTarget.name + '.'
+          };
+        }
+      }
+      return null;
+    }
+
     function scheduleMarketPeerActivity() {
       if (!room || room.stage !== 'market') return;
       const peers = room.managers.filter(m => m.kind === 'PEER' || m.kind === 'BOT');
       const me = myMgr();
 
-      // Send 1 incoming proposal from an online peer so the user experiences live incoming offers
-      if (me && peers.length > 0) {
-        schedulePeerTask(() => {
-          if (!room || room.stage !== 'market') return;
-          const p = peers[Math.floor(Math.random() * peers.length)];
-          const pOut = [...p.roster].filter(x => x.pos !== 'GOL').sort((a, b) => b.ovr - a.ovr);
-          const mOut = [...me.roster].filter(x => x.pos !== 'GOL').sort((a, b) => b.ovr - a.ovr);
-          if (pOut.length >= 3 && mOut.length >= 3) {
-            room.market.offers.unshift({
-              id: 'of_auto_' + Date.now(),
-              fromId: p.id,
-              toId: me.id,
-              sendUids: [pOut[1].uid, pOut[2].uid],
-              askUids: [mOut[0].uid],
-              status: 'PENDING',
-              note: p.name + ' quer negociar pacote 2x1 pelo seu craque!'
-            });
-            saveRoomAndBroadcast();
-            render();
-            toast('Nova proposta de troca de ' + p.name + '!');
-          }
-        }, 2200);
+      // Up to 2 varied, need-based offers from different CPUs (1x1, 2x2, 1x2 or rare 2x1)
+      if (me && peers.length > 0 && amIHost()) {
+        const shuffledPeers = shuffle(peers).slice(0, Math.min(2, peers.length));
+        shuffledPeers.forEach((p, idx) => {
+          schedulePeerTask(() => {
+            if (!room || room.stage !== 'market') return;
+            const liveCpu = room.managers.find(x => x.id === p.id);
+            const liveMe = myMgr();
+            if (!liveCpu || !liveMe) return;
+            const built = buildSmartCpuProposal(liveCpu, liveMe);
+            if (built) {
+              room.market.offers.unshift({
+                id: 'of_auto_' + Date.now() + '_' + idx,
+                fromId: liveCpu.id,
+                toId: liveMe.id,
+                sendUids: built.sendUids,
+                askUids: built.askUids,
+                status: 'PENDING',
+                note: built.note
+              });
+              saveRoomAndBroadcast();
+              render();
+              toast('Nova proposta de troca de ' + liveCpu.name + '!');
+            }
+          }, 1900 + idx * 2400);
+        });
       }
 
       // Peers mark Ready for closing market
@@ -3691,7 +3655,7 @@
             d.y = d.ay;
           }
         });
-        this.ball = { x: 0.5, y: 0.5, vx: side === 'H' ? 0.004 : -0.004, vy: (this.rand() - 0.5) * 0.004, cooldown: 12, lastTouchIdx: -1 };
+        const kDir = side === 'H' ? -1 : 1; this.ball = { x: 0.5, y: 0.5, vx: kDir * 0.0035, vy: (this.rand() - 0.5) * 0.004, cooldown: 10, lastTouchIdx: -1 };
       },
 
       startLive(m) {
@@ -3741,6 +3705,23 @@
         render();
       },
 
+      getTacticalProfile(mgr) {
+        const st = (mgr && mgr.stance) || 'BALANCED';
+        const fmt = (mgr && mgr.formation) || '4-3-3';
+        // Postura tática impacta de verdade: linha de marcação, pressão, finalização e proteção defensiva
+        let lineShift = st === 'ATTACK' ? 0.032 : (st === 'DEFENSIVE' ? -0.028 : 0.0);
+        let shotBias = st === 'ATTACK' ? 0.11 : (st === 'DEFENSIVE' ? -0.12 : 0.0);
+        let defCover = st === 'DEFENSIVE' ? 0.08 : (st === 'ATTACK' ? -0.06 : 0.0);
+        let pressCount = 1;
+        let passRisk = st === 'ATTACK' ? 1.18 : (st === 'DEFENSIVE' ? 0.85 : 1.0);
+
+        // Formação modifica controle de meio, força ofensiva e solidez defensiva
+        if (fmt === '4-4-2') { defCover += 0.03; shotBias += 0.02; }
+        else if (fmt === '3-5-2') { passRisk += 0.12; lineShift += 0.02; shotBias += 0.03; defCover -= 0.02; }
+        else if (fmt === '4-2-4') { lineShift += 0.015; shotBias += 0.07; defCover -= 0.03; }
+        return { st, fmt, lineShift, shotBias, defCover, pressCount, passRisk };
+      },
+
       step(m, silent) {
         if (this.pauseFrames > 0) {
           this.pauseFrames--;
@@ -3775,32 +3756,41 @@
 
         const home = room.managers.find(x => x.id === m.homeId);
         const away = room.managers.find(x => x.id === m.awayId);
-        const hShift = home && home.stance === 'ATTACK' ? 0.08 : (home && home.stance === 'DEFENSIVE' ? -0.07 : 0);
-        const aShift = away && away.stance === 'ATTACK' ? -0.08 : (away && away.stance === 'DEFENSIVE' ? 0.07 : 0);
+        const hTac = this.getTacticalProfile(home);
+        const aTac = this.getTacticalProfile(away);
 
-        let chaserH = -1, dH = 999, chaserA = -1, dA = 999;
+        // Closest 1 or 2 pressers per side (ATTACK presses with 2, DEFENSIVE holds compact block)
+        const hCands = [], aCands = [];
         this.discs.forEach((d, idx) => {
           if (d.role === 'GOL') return;
           const dist = dist2(d.x - b.x, d.y - b.y);
-          if (d.side === 'H' && dist < dH) { dH = dist; chaserH = idx; }
-          if (d.side === 'A' && dist < dA) { dA = dist; chaserA = idx; }
+          if (d.side === 'H') hCands.push({ idx, dist });
+          else aCands.push({ idx, dist });
         });
+        hCands.sort((a, b) => a.dist - b.dist);
+        aCands.sort((a, b) => a.dist - b.dist);
+        const chaserSet = new Set();
+        for (let k = 0; k < hTac.pressCount && k < hCands.length; k++) chaserSet.add(hCands[k].idx);
+        for (let k = 0; k < aTac.pressCount && k < aCands.length; k++) chaserSet.add(aCands[k].idx);
 
         this.discs.forEach((d, idx) => {
-          const spd = 0.0021 + (d.ovr - 75) * 0.000055;
+          const tac = d.side === 'H' ? hTac : aTac;
+          const spd = (0.0020 + (d.ovr - 75) * 0.000052) * (tac.st === 'ATTACK' ? 1.05 : 1.0);
           if (d.role === 'GOL') {
-            const tx = d.side === 'H' ? 0.042 : 0.958;
-            const ty = Math.max(0.37, Math.min(0.63, b.y));
-            d.x += (tx - d.x) * 0.18;
-            d.y += Math.sign(ty - d.y) * Math.min(Math.abs(ty - d.y), spd * 1.9);
+            const tx = d.side === 'H' ? 0.044 : 0.956;
+            const ty = Math.max(0.39, Math.min(0.61, b.y * 0.72 + 0.5 * 0.28));
+            d.x += (tx - d.x) * 0.22;
+            d.y += Math.sign(ty - d.y) * Math.min(Math.abs(ty - d.y), spd * 2.35);
             return;
           }
           let tx = d.ax, ty = d.ay;
-          if (idx === chaserH || idx === chaserA) {
+          if (chaserSet.has(idx)) {
             tx = b.x; ty = b.y;
           } else {
-            tx = Math.max(0.09, Math.min(0.91, d.ax + (b.x - 0.5) * 0.34 + (d.side === 'H' ? hShift : aShift)));
-            ty = Math.max(0.08, Math.min(0.92, d.ay + (b.y - 0.5) * 0.18));
+            const dir = d.side === 'H' ? 1 : -1;
+            const compactY = tac.st === 'DEFENSIVE' ? (0.5 + (d.ay - 0.5) * 0.94) : d.ay;
+            const roleShift = d.role === 'ZAG' ? tac.lineShift * 0.35 : tac.lineShift; tx = Math.max(0.08, Math.min(0.92, d.ax + (b.x - 0.5) * 0.34 + dir * roleShift));
+            ty = Math.max(0.08, Math.min(0.92, compactY + (b.y - 0.5) * 0.22));
           }
           const dx = tx - d.x, dy = ty - d.y;
           const dist = dist2(dx, dy) || 1;
@@ -3825,27 +3815,49 @@
         }
 
         if (b.cooldown === 0) {
+          let bestIdx = -1, bestDist = 999;
           for (let i = 0; i < this.discs.length; i++) {
             const d = this.discs[i];
-            if (dist2(b.x - d.x, b.y - d.y) < (d.role === 'GOL' ? 0.033 : 0.028)) {
-              this.touchBall(d, i, silent);
-              break;
+            const reach = d.role === 'GOL' ? 0.040 : 0.029;
+            const dd = dist2(b.x - d.x, b.y - d.y);
+            if (dd < reach && dd < bestDist) {
+              bestDist = dd;
+              bestIdx = i;
             }
+          }
+          if (bestIdx !== -1) {
+            this.touchBall(this.discs[bestIdx], bestIdx, silent, home, away);
           }
         }
 
         b.x += b.vx; b.y += b.vy;
         b.vx *= 0.985; b.vy *= 0.985;
-        if (b.y < 0.05) { b.y = 0.05; b.vy = Math.abs(b.vy) * 0.8; }
-        if (b.y > 0.95) { b.y = 0.95; b.vy = -Math.abs(b.vy) * 0.8; }
+        if (b.y < 0.05) { b.y = 0.05; b.vy = Math.abs(b.vy) * 0.78; }
+        if (b.y > 0.95) { b.y = 0.95; b.vy = -Math.abs(b.vy) * 0.78; }
 
-        const inGoal = b.y > 0.36 && b.y < 0.64;
+        // Realistic goal mouth (20% of pitch height) + crossbar/post rebounds
+        const inGoal = b.y > 0.40 && b.y < 0.60;
+        const hitPost = (b.y >= 0.38 && b.y <= 0.40) || (b.y >= 0.60 && b.y <= 0.62);
         if (b.x < 0.032) {
           if (inGoal) { this.scoreGoal(m, 'A', silent); return true; }
-          b.x = 0.035; b.vx = Math.abs(b.vx) * 0.75 + 0.004;
+          if (hitPost && !silent) {
+            this.addImpact(b.x, b.y, '#F6C945');
+            this.shakeFrames = 6;
+            AudioEngine.clack();
+            const tk = document.getElementById('match-ticker-text');
+            if (tk) tk.textContent = 'Bola na trave!';
+          }
+          b.x = 0.038; b.vx = Math.abs(b.vx) * 0.72 + 0.005;
         } else if (b.x > 0.968) {
           if (inGoal) { this.scoreGoal(m, 'H', silent); return true; }
-          b.x = 0.965; b.vx = -Math.abs(b.vx) * 0.75 - 0.004;
+          if (hitPost && !silent) {
+            this.addImpact(b.x, b.y, '#F6C945');
+            this.shakeFrames = 6;
+            AudioEngine.clack();
+            const tk = document.getElementById('match-ticker-text');
+            if (tk) tk.textContent = 'Bola na trave!';
+          }
+          b.x = 0.962; b.vx = -Math.abs(b.vx) * 0.72 - 0.005;
         }
 
         if (this.trail && this.trail.ttl > 0) this.trail.ttl--;
@@ -3857,23 +3869,26 @@
         return true;
       },
 
-      touchBall(d, idx, silent) {
+      touchBall(d, idx, silent, home, away) {
         const b = this.ball;
         const attRight = d.side === 'H';
+        const myTac = this.getTacticalProfile(attRight ? home : away);
+        const oppTac = this.getTacticalProfile(attRight ? away : home);
         const gx = attRight ? 0.98 : 0.02;
         const distG = Math.abs(gx - d.x);
         const skill = (d.ovr - 75) / 16;
 
         if (d.role === 'GOL') {
           const shotSpd = dist2(b.vx, b.vy);
-          const saveProb = 0.67 + skill * 0.28 - shotSpd * 9.2;
-          if (shotSpd > 0.012 && this.rand() > saveProb) {
-            b.cooldown = 10;
+          // Realistic goalkeeper shot-stopping + defensive posture cover
+          const saveProb = Math.min(0.88, Math.max(0.36, 0.70 + skill * 0.16 + myTac.defCover * 0.45 - shotSpd * 7.8));
+          if (shotSpd > 0.013 && this.rand() > saveProb) {
+            b.cooldown = 12;
             return;
           }
-          b.vx = attRight ? 0.014 : -0.014;
-          b.vy = (this.rand() - 0.5) * 0.014;
-          b.cooldown = 14;
+          b.vx = attRight ? 0.015 : -0.015;
+          b.vy = (this.rand() - 0.5) * 0.016;
+          b.cooldown = 16;
           if (!silent) {
             this.addImpact(b.x, b.y, '#FFFFFF');
             AudioEngine.clack();
@@ -3885,47 +3900,72 @@
 
         b.lastTouchIdx = idx;
 
-        if (distG < 0.31 && this.rand() < (d.role === 'ATA' ? 0.78 : 0.48)) {
-          const cornerY = this.rand() < 0.5 ? 0.40 : 0.60;
-          const aimY = cornerY + (this.rand() - 0.5) * ((1.1 - skill) * 0.14);
+        // Realistic shooting zone & probability shaped by tactical stance and opponent's defensive block
+        const shotRange = 0.34 + myTac.shotBias * 0.08;
+        const baseShotChance = (d.role === 'ATA' ? 0.56 : (d.role === 'MEI' ? 0.32 : 0.14)) + myTac.shotBias * 0.45 - oppTac.defCover * 0.35;
+        if (distG < shotRange && this.rand() < Math.max(0.06, baseShotChance)) {
+          // Check if an opponent defender is directly blocking the shot lane
+          const blockers = this.discs.filter(o => o.side !== d.side && o.role !== 'GOL' && dist2(o.x - d.x, o.y - d.y) < 0.075);
+          if (blockers.length > 0 && this.rand() < (0.36 + oppTac.defCover * 0.9)) {
+            b.vx = (attRight ? -1 : 1) * 0.011;
+            b.vy = (this.rand() - 0.5) * 0.014;
+            b.cooldown = 14;
+            if (!silent) {
+              this.addImpact(b.x, b.y, '#FFFFFF');
+              AudioEngine.clack();
+              const tk = document.getElementById('match-ticker-text');
+              if (tk) tk.textContent = 'Travado por ' + blockers[0].fullName + '!';
+            }
+            return;
+          }
+
+          // Realistic shot aim (some shots go wide of the 0.40..0.60 goal!)
+          const onTargetProb = Math.min(0.86, Math.max(0.42, 0.60 + skill * 0.22 + myTac.shotBias * 0.18 - oppTac.defCover * 0.24));
+          let aimY;
+          if (this.rand() < onTargetProb) {
+            aimY = 0.415 + this.rand() * 0.17;
+          } else {
+            aimY = this.rand() < 0.5 ? (0.28 + this.rand() * 0.11) : (0.61 + this.rand() * 0.11);
+          }
           const dx = gx - b.x, dy = aimY - b.y;
           const len = dist2(dx, dy) || 1;
-          const pwr = 0.018 + skill * 0.007;
+          const pwr = 0.0195 + skill * 0.0065;
           b.vx = (dx / len) * pwr; b.vy = (dy / len) * pwr;
-          b.cooldown = 12;
+          b.cooldown = 15;
           this.trail = { x1: b.x, y1: b.y, x2: gx, y2: aimY, ttl: 14, shot: true };
           if (!silent) {
             this.addImpact(b.x, b.y, '#F6C945');
             this.shakeFrames = 5;
             AudioEngine.kick();
             const tk = document.getElementById('match-ticker-text');
-            if (tk) tk.textContent = d.fullName + ' bate pro gol!';
+            if (tk) tk.textContent = d.fullName + ' arrisca o chute!';
           }
           return;
         }
 
+        // Passing & tactical build-up (DEFENSIVE launches longer counters; ATTACK triangulates fast forward)
         const mates = this.discs.filter((mDisc, mIdx) => mDisc.side === d.side && mIdx !== idx && mDisc.role !== 'GOL');
         let best = null, bestSc = -999;
         mates.forEach(mt => {
           const gain = attRight ? (mt.x - d.x) : (d.x - mt.x);
           const dist = dist2(mt.x - d.x, mt.y - d.y);
-          if (dist < 0.07 || dist > 0.46) return;
-          const sc = gain * 2.2 - Math.abs(mt.y - 0.5) * 0.25 + this.rand() * 0.18;
+          if (dist < 0.07 || dist > (myTac.st === 'ATTACK' ? 0.48 : 0.42)) return;
+          const sc = gain * (2.0 * myTac.passRisk) - Math.abs(mt.y - 0.5) * 0.22 + this.rand() * 0.22;
           if (sc > bestSc) { bestSc = sc; best = mt; }
         });
 
-        if (best && (bestSc > 0.02 || d.role === 'ZAG' || this.rand() < 0.68)) {
+        if (best && (bestSc > 0.01 || d.role === 'ZAG' || this.rand() < 0.72)) {
           const dx = best.x - b.x, dy = best.y - b.y;
           const len = dist2(dx, dy) || 1;
-          const ps = Math.min(0.016, 0.009 + Math.min(0.45, len) * 0.018);
+          const ps = Math.min(0.0185, 0.0105 + Math.min(0.48, len) * 0.018);
           b.vx = (dx / len) * ps; b.vy = (dy / len) * ps;
-          b.cooldown = 11;
+          b.cooldown = 13;
           this.trail = { x1: b.x, y1: b.y, x2: best.x, y2: best.y, ttl: 10, shot: false };
           if (!silent) AudioEngine.clack();
         } else {
-          b.vx = (attRight ? 1 : -1) * (0.0075 + skill * 0.0025);
-          b.vy = (0.5 - b.y) * 0.006 + (this.rand() - 0.5) * 0.005;
-          b.cooldown = 8;
+          b.vx = (attRight ? 1 : -1) * (0.007 + skill * 0.0022);
+          b.vy = (0.5 - b.y) * 0.005 + (this.rand() - 0.5) * 0.006;
+          b.cooldown = 10;
           if (!silent) AudioEngine.clack();
         }
       },
@@ -4039,7 +4079,7 @@
         ctx.strokeRect(px, (h - penH) / 2, penW, penH);
         ctx.strokeRect(w - px - penW, (h - penH) / 2, penW, penH);
 
-        const gTop = h * 0.36, gH = h * 0.28;
+        const gTop = h * 0.40, gH = h * 0.20;
         ctx.fillStyle = 'rgba(255,255,255,0.18)';
         ctx.fillRect(2, gTop, px - 2, gH);
         ctx.fillRect(w - px, gTop, px - 2, gH);
@@ -4781,8 +4821,9 @@
       const aClub = getClubObj(away.clubId, univ);
       document.getElementById('arena-round-tag').textContent = m.stageName;
       document.getElementById('arena-names-heading').textContent = home.name + ' (' + hClub.name + ') x ' + away.name + ' (' + aClub.name + ')';
-      document.getElementById('sb-home-label').textContent = home.name;
-      document.getElementById('sb-away-label').textContent = away.name;
+      const stShort = { DEFENSIVE: 'Retranca', BALANCED: 'Equilibrado', ATTACK: 'Ofensivo' };
+      document.getElementById('sb-home-label').textContent = home.name + ' (' + (home.formation || '4-3-3') + ' • ' + (stShort[home.stance] || 'Equilibrado') + ')';
+      document.getElementById('sb-away-label').textContent = away.name + ' (' + (away.formation || '4-3-3') + ' • ' + (stShort[away.stance] || 'Equilibrado') + ')';
       document.getElementById('sb-home-crest').innerHTML = uniqueClubSvg(hClub.svg);
       document.getElementById('sb-away-crest').innerHTML = uniqueClubSvg(aClub.svg);
       document.getElementById('sb-home-goals-list').textContent = (m.homeScorers || []).join(', ');
@@ -4953,7 +4994,7 @@
       openModal('Jogadores disponíveis', `
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="seg-track">
-            <button type="button" data-action="db-univ" data-val="BRASIL" class="seg-pill ${univ === 'BRASIL' ? 'active' : ''}">Série A Nov/2026 (135)</button>
+            <button type="button" data-action="db-univ" data-val="BRASIL" class="seg-pill ${univ === 'BRASIL' ? 'active' : ''}">Série A Nov/2026 (136)</button>
             <button type="button" data-action="db-univ" data-val="EUROPA" class="seg-pill ${univ === 'EUROPA' ? 'active' : ''}">Europa EA FC 27 (127)</button>
           </div>
           <input type="text" id="db-search-box" value="${esc(query)}" placeholder="Buscar jogador ou clube..." class="rounded-lg px-3 py-1.5 text-xs w-56" />
@@ -5501,5 +5542,343 @@
       } catch (e) {}
     };
   </script>
+  <script>
+    // Fifoot Online — Native Vercel Serverless Adapter (Zero WebSocket Server Required)
+    (function () {
+      if (!window.location || !/^https?:/i.test(window.location.protocol)) return;
+
+      let available = false;
+      let storageType = 'memory';
+      let activeCode = null;
+      let isHostRole = false;
+      let cursor = 0;
+      let stateVersion = 0;
+      let pollTimer = null;
+      let pollInFlight = false;
+      let roomsTimer = null;
+      let joinTimeout = null;
+      let pendingJoinNotFound = null;
+      let sendChain = Promise.resolve();
+
+      function badgeLabel() {
+        return storageType === 'redis' ? 'Vercel Online (Redis)' : 'Vercel Online';
+      }
+
+      function enqueuePost(payload) {
+        sendChain = sendChain.then(function () {
+          return fetch('/api/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            cache: 'no-store'
+          }).then(function (r) {
+            return r.json().catch(function () { return null; });
+          }).catch(function () { return null; });
+        });
+        return sendChain;
+      }
+
+      async function fetchGlobalRooms() {
+        if (!available) return;
+        try {
+          const res = await fetch('/api/sync?op=rooms', { cache: 'no-store' });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data && Array.isArray(data.rooms)) {
+            window.FIFOOT_GLOBAL_ROOMS = data.rooms;
+            if (typeof window.refreshHomeRooms === 'function') window.refreshHomeRooms();
+          }
+        } catch (_) {}
+      }
+
+      function stopPolling() {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        if (joinTimeout) { clearTimeout(joinTimeout); joinTimeout = null; }
+        pollInFlight = false;
+      }
+
+      async function pollOnce() {
+        if (!available || !activeCode || pollInFlight) return;
+        pollInFlight = true;
+        const codeSnapshot = activeCode;
+        const roleSnapshot = isHostRole ? 'host' : 'guest';
+        const cid = typeof Client !== 'undefined' ? Client.id : '';
+        try {
+          const url = '/api/sync?op=poll&code=' + encodeURIComponent(codeSnapshot)
+            + '&role=' + roleSnapshot
+            + '&clientId=' + encodeURIComponent(cid)
+            + '&cursor=' + cursor
+            + '&stateVersion=' + stateVersion;
+          const res = await fetch(url, { cache: 'no-store' });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (!data || activeCode !== codeSnapshot) return;
+
+          if (data.storage) storageType = data.storage;
+
+          if (data.closed || data.error === 'ROOM_NOT_FOUND') {
+            if (pendingJoinNotFound) {
+              const cb = pendingJoinNotFound;
+              pendingJoinNotFound = null;
+              stopPolling();
+              activeCode = null;
+              cb('Sala ' + codeSnapshot + ' não encontrada ou já encerrada.');
+              return;
+            }
+            if (!isHostRole && typeof room !== 'undefined' && room && room.code === codeSnapshot) {
+              stopPolling();
+              activeCode = null;
+              if (typeof MatchEngine !== 'undefined') MatchEngine.stop();
+              if (typeof RouletteAnim !== 'undefined') RouletteAnim.stop();
+              room = null;
+              if (typeof Client !== 'undefined') Client.screen = 'home';
+              if (typeof OnlineNet !== 'undefined') OnlineNet.setBadge('SERVER', badgeLabel());
+              if (typeof render === 'function') render();
+              if (typeof toast === 'function') toast('O host encerrou a sala.');
+            }
+            return;
+          }
+
+          if (typeof data.nextCursor === 'number' && data.nextCursor > cursor) {
+            cursor = data.nextCursor;
+          }
+
+          const events = Array.isArray(data.events) ? data.events : [];
+
+          if (roleSnapshot === 'host') {
+            for (let i = 0; i < events.length; i++) {
+              const pkt = events[i];
+              if (pkt && typeof OnlineNet !== 'undefined') {
+                OnlineNet.onHostReceivePacket(pkt, null);
+              }
+            }
+            return;
+          }
+
+          // Guest event handling
+          const latestRoom = data.latestRoom || null;
+          let appliedLatestRoom = false;
+          let lastToastMsg = '';
+
+          for (let i = 0; i < events.length; i++) {
+            const ev = events[i];
+            if (!ev || !ev.type) continue;
+
+            if (ev.type === 'ROOM_CLOSED') {
+              stopPolling();
+              activeCode = null;
+              if (typeof MatchEngine !== 'undefined') MatchEngine.stop();
+              if (typeof RouletteAnim !== 'undefined') RouletteAnim.stop();
+              if (typeof room !== 'undefined') room = null;
+              if (typeof Client !== 'undefined') Client.screen = 'home';
+              if (typeof OnlineNet !== 'undefined') OnlineNet.setBadge('SERVER', badgeLabel());
+              if (typeof render === 'function') render();
+              if (typeof toast === 'function') toast(ev.reason || 'O host encerrou a sala.');
+              return;
+            }
+
+            if (ev.type === 'ROOM_SYNC_REF') {
+              if (ev.toastMsg) lastToastMsg = ev.toastMsg;
+              continue;
+            }
+
+            if (ev.type === 'JOIN_ACCEPTED' || ev.type === 'JOIN_REJECTED') {
+              if (!ev.targetId || (typeof Client !== 'undefined' && ev.targetId === Client.id)) {
+                pendingJoinNotFound = null;
+                if (joinTimeout) { clearTimeout(joinTimeout); joinTimeout = null; }
+              }
+            }
+
+            if (ev.useLatestRoom && latestRoom) {
+              const hydrated = Object.assign({}, ev, { room: latestRoom });
+              if (typeof OnlineNet !== 'undefined') OnlineNet.onClientReceivePacket(hydrated);
+              appliedLatestRoom = true;
+            } else {
+              if (typeof OnlineNet !== 'undefined') OnlineNet.onClientReceivePacket(ev);
+            }
+          }
+
+          if (latestRoom && typeof data.latestVersion === 'number' && data.latestVersion > stateVersion) {
+            stateVersion = data.latestVersion;
+            if (!appliedLatestRoom && typeof OnlineNet !== 'undefined') {
+              OnlineNet.onClientReceivePacket({
+                type: 'ROOM_SYNC',
+                code: codeSnapshot,
+                room: latestRoom,
+                toastMsg: lastToastMsg
+              });
+            }
+          }
+        } catch (_) {
+          // Transient network blip on 4G — next poll recovers cleanly
+        } finally {
+          pollInFlight = false;
+        }
+      }
+
+      function startPolling() {
+        stopPolling();
+        pollTimer = setInterval(pollOnce, 550);
+        pollOnce();
+      }
+
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden && available) {
+          if (activeCode) pollOnce();
+          else fetchGlobalRooms();
+        }
+      });
+
+      window.addEventListener('beforeunload', function () {
+        if (available && activeCode && typeof Client !== 'undefined' && navigator.sendBeacon) {
+          try {
+            const payload = JSON.stringify({
+              op: 'leave',
+              code: activeCode,
+              clientId: Client.id,
+              isHost: isHostRole
+            });
+            navigator.sendBeacon('/api/sync', new Blob([payload], { type: 'application/json' }));
+          } catch (_) {}
+        }
+      });
+
+      window.FIFOOT_WS_ADAPTER = {
+        isAvailable: function () { return available; },
+        isConnected: function () { return available; },
+
+        hostRoom: function (code, roomObj) {
+          activeCode = code;
+          isHostRole = true;
+          cursor = 0;
+          stateVersion = 1;
+          pendingJoinNotFound = null;
+          if (typeof OnlineNet !== 'undefined') OnlineNet.setBadge('SERVER', badgeLabel());
+          enqueuePost({
+            op: 'host_create',
+            code: code,
+            hostId: typeof Client !== 'undefined' ? Client.id : (roomObj ? roomObj.hostId : ''),
+            room: roomObj
+          }).then(function () {
+            startPolling();
+            fetchGlobalRooms();
+          });
+        },
+
+        joinRoom: function (code, guestInfo, onNotFound) {
+          stopPolling();
+          activeCode = code;
+          isHostRole = false;
+          cursor = 0;
+          stateVersion = 0;
+          pendingJoinNotFound = onNotFound || null;
+
+          joinTimeout = setTimeout(function () {
+            if (pendingJoinNotFound) {
+              const cb = pendingJoinNotFound;
+              pendingJoinNotFound = null;
+              stopPolling();
+              activeCode = null;
+              cb('O host da sala ' + code + ' não respondeu a tempo.');
+            }
+          }, 12000);
+
+          enqueuePost({
+            op: 'client_join',
+            code: code,
+            clientId: guestInfo.clientId,
+            packet: {
+              type: 'GUEST_JOIN',
+              code: code,
+              clientId: guestInfo.clientId,
+              name: guestInfo.name,
+              clubBr: guestInfo.clubBr,
+              clubEu: guestInfo.clubEu
+            }
+          }).then(function (resp) {
+            if (!resp || !resp.ok) {
+              if (pendingJoinNotFound) {
+                const cb = pendingJoinNotFound;
+                pendingJoinNotFound = null;
+                stopPolling();
+                activeCode = null;
+                cb((resp && resp.reason) || 'Sala ' + code + ' não encontrada.');
+              }
+              return;
+            }
+            if (typeof resp.h2cCursor === 'number') cursor = resp.h2cCursor;
+            startPolling();
+          });
+        },
+
+        broadcastFromHost: function (code, packet, roomObj) {
+          if (!available || !code) return;
+          enqueuePost({
+            op: 'host_broadcast',
+            code: code,
+            hostId: typeof Client !== 'undefined' ? Client.id : '',
+            packet: packet,
+            room: roomObj || null
+          });
+        },
+
+        sendToHost: function (code, packet) {
+          if (!available || !code) return;
+          enqueuePost({
+            op: 'client_to_host',
+            code: code,
+            clientId: typeof Client !== 'undefined' ? Client.id : '',
+            packet: packet
+          });
+        },
+
+        leaveRoom: function () {
+          const prevCode = activeCode;
+          const prevHost = isHostRole;
+          stopPolling();
+          activeCode = null;
+          isHostRole = false;
+          pendingJoinNotFound = null;
+          if (available && prevCode && typeof Client !== 'undefined') {
+            enqueuePost({
+              op: 'leave',
+              code: prevCode,
+              clientId: Client.id,
+              isHost: prevHost
+            });
+          }
+        },
+
+        refreshRooms: fetchGlobalRooms
+      };
+
+      // Probe Vercel Serverless Sync API on startup
+      fetch('/api/sync?op=health', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (d && d.ok && d.mode === 'vercel') {
+            available = true;
+            storageType = d.storage || 'memory';
+            if (typeof OnlineNet !== 'undefined') {
+              OnlineNet.setBadge('SERVER', badgeLabel());
+            }
+            fetchGlobalRooms();
+            if (!roomsTimer) {
+              roomsTimer = setInterval(function () {
+                if (!activeCode) fetchGlobalRooms();
+              }, 8000);
+            }
+            // If user opened an invite link (?room=FIFO-XXXX) before probe finished, retry join cleanly
+            if (typeof window.__FIFOOT_RETRY_INVITE === 'function') {
+              window.__FIFOOT_RETRY_INVITE();
+            }
+          }
+        })
+        .catch(function () {
+          available = false;
+        });
+    })();
+  </script>
+
 </body>
 </html>
