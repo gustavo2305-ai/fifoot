@@ -8,36 +8,45 @@
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #FAFAFA;
+      --bg: #F3F6F4;
+      --bg-glow: radial-gradient(circle at 50% -10%, rgba(16,185,129,0.12), transparent 55%);
       --card: #FFFFFF;
-      --soft: #F2F5F3;
-      --mint: #EAF5EE;
-      --mint-border: #16A34A;
-      --forest: #0F3D26;
-      --forest-hover: #165636;
-      --yellow: #F6C945;
-      --yellow-ink: #18221C;
-      --ink: #141A16;
-      --muted: #637067;
-      --line: #E3E8E5;
+      --card-elev: #FFFFFF;
+      --soft: #EAF0EC;
+      --mint: #E6F6EC;
+      --mint-border: #10B981;
+      --forest: #0E4D2F;
+      --forest-hover: #146840;
+      --yellow: #F5C542;
+      --yellow-ink: #101613;
+      --ink: #111815;
+      --muted: #5C6B63;
+      --line: #DCE3DF;
+      --glass-border: rgba(15, 23, 20, 0.09);
+      --display: 'Barlow Condensed', 'Plus Jakarta Sans', sans-serif;
     }
 
     html.dark {
-      --bg: #0E1310;
-      --card: #161D19;
-      --soft: #1E2722;
-      --mint: #142D1F;
-      --mint-border: #22C55E;
-      --forest: #16A34A;
-      --forest-hover: #22C55E;
-      --yellow: #EAB308;
-      --yellow-ink: #111713;
-      --ink: #F1F5F2;
-      --muted: #94A39B;
-      --line: #26312B;
+      --bg: #070B10;
+      --bg-glow:
+        radial-gradient(ellipse 80% 45% at 50% -8%, rgba(16,185,129,0.20), transparent 65%),
+        radial-gradient(ellipse 50% 35% at 88% 4%, rgba(245,197,66,0.10), transparent 60%);
+      --card: #0F1620;
+      --card-elev: #151F2D;
+      --soft: #172130;
+      --mint: rgba(16, 185, 129, 0.14);
+      --mint-border: #10B981;
+      --forest: #10B981;
+      --forest-hover: #34D399;
+      --yellow: #F5C542;
+      --yellow-ink: #0A0F14;
+      --ink: #F1F5F9;
+      --muted: #8FA1B3;
+      --line: rgba(255, 255, 255, 0.09);
+      --glass-border: rgba(255, 255, 255, 0.10);
     }
 
     * { box-sizing: border-box; }
@@ -45,7 +54,9 @@
     html, body {
       margin: 0;
       padding: 0;
-      background: var(--bg);
+      background-color: var(--bg);
+      background-image: var(--bg-glow);
+      background-attachment: fixed;
       color: var(--ink);
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       font-variant-numeric: tabular-nums;
@@ -53,46 +64,100 @@
       min-height: 100vh;
     }
 
+    .font-display {
+      font-family: var(--display);
+      letter-spacing: 0.015em;
+    }
+
     .surface {
       background: var(--card);
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: 16px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.06);
+    }
+    html.dark .surface {
+      background: linear-gradient(180deg, rgba(21,31,45,0.92) 0%, rgba(13,20,30,0.96) 100%);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255,255,255,0.05);
     }
 
     .option-card {
       background: var(--card);
       border: 1.5px solid var(--line);
-      border-radius: 12px;
-      transition: border-color 0.15s ease, background-color 0.15s ease;
+      border-radius: 13px;
+      transition: border-color 0.16s ease, background-color 0.16s ease, transform 0.14s ease, box-shadow 0.16s ease;
       text-align: left;
     }
-    .option-card:hover { border-color: #9FB3A6; }
+    .option-card:hover { border-color: rgba(16,185,129,0.55); transform: translateY(-1px); }
     .option-card.selected {
       background: var(--mint);
       border-color: var(--mint-border);
+      box-shadow: 0 0 0 1px rgba(16,185,129,0.28), 0 8px 20px rgba(16,185,129,0.12);
     }
 
     .summary-yellow {
-      background-color: var(--yellow);
+      background: linear-gradient(135deg, #F7CE4E 0%, #E7B124 100%);
       background-image:
-        radial-gradient(circle at 120% -10%, rgba(255,255,255,0.28) 0%, transparent 55%),
-        repeating-linear-gradient(-25deg, rgba(0,0,0,0.025) 0px, rgba(0,0,0,0.025) 2px, transparent 2px, transparent 14px);
+        radial-gradient(circle at 105% -15%, rgba(255,255,255,0.38) 0%, transparent 50%),
+        linear-gradient(135deg, #F7CE4E 0%, #E2A91B 100%);
       color: var(--yellow-ink);
-      border-radius: 16px;
+      border-radius: 18px;
+      box-shadow: 0 16px 36px rgba(231, 177, 36, 0.20);
     }
+
+    .stadium-hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background:
+        radial-gradient(circle at 18% 12%, rgba(16,185,129,0.30) 0%, transparent 48%),
+        radial-gradient(circle at 86% 8%, rgba(245,197,66,0.22) 0%, transparent 44%),
+        linear-gradient(135deg, #0B1520 0%, #0E1F1A 52%, #0A1018 100%);
+      color: #F8FAFC;
+      box-shadow: 0 24px 56px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .stadium-hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(-30deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 2px, transparent 2px, transparent 16px);
+      pointer-events: none;
+    }
+    .hero-crest-strip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .hero-crest-chip {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px;
+      transition: transform 0.16s ease, background-color 0.16s ease;
+    }
+    .hero-crest-chip:hover { transform: translateY(-2px) scale(1.06); background: rgba(255,255,255,0.13); }
+    .hero-crest-chip img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.45)); }
 
     .btn-primary {
-      background: var(--forest);
+      background: linear-gradient(180deg, #16A34A 0%, #0F7A3A 100%);
       color: #FFFFFF;
-      border-radius: 10px;
+      border-radius: 11px;
       font-weight: 700;
-      transition: background-color 0.15s ease, opacity 0.15s ease;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.28), inset 0 1px 0 rgba(255,255,255,0.18);
+      transition: transform 0.12s ease, filter 0.15s ease, opacity 0.15s ease;
     }
-    .btn-primary:hover:not(:disabled) { background: var(--forest-hover); }
-    .btn-primary:disabled { opacity: 0.42; cursor: not-allowed; }
+    .btn-primary:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+    .btn-primary:active:not(:disabled) { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.40; cursor: not-allowed; box-shadow: none; }
 
     .btn-ready {
-      border-radius: 10px;
+      border-radius: 11px;
       font-weight: 700;
       transition: all 0.15s ease;
     }
@@ -102,9 +167,9 @@
       border: 1.5px solid #16A34A;
     }
     html.dark .btn-ready.is-ready {
-      background: rgba(22,163,74,0.22);
-      color: #86EFAC;
-      border: 1.5px solid #22C55E;
+      background: rgba(16,185,129,0.20);
+      color: #6EE7B7;
+      border: 1.5px solid #10B981;
     }
     .btn-ready.not-ready {
       background: #141A16;
@@ -112,43 +177,63 @@
       border: 1.5px solid #141A16;
     }
     html.dark .btn-ready.not-ready {
-      background: #F6C945;
-      color: #141A16;
-      border: 1.5px solid #F6C945;
+      background: linear-gradient(180deg, #F7CE4E 0%, #E5AE1F 100%);
+      color: #0B1014;
+      border: 1.5px solid #F7CE4E;
+      box-shadow: 0 4px 14px rgba(245,197,66,0.25);
     }
 
     .btn-secondary {
-      background: var(--card);
+      background: var(--card-elev);
       color: var(--ink);
       border: 1px solid var(--line);
       border-radius: 10px;
       font-weight: 600;
-      transition: background-color 0.15s ease;
+      transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
     }
-    .btn-secondary:hover:not(:disabled) { background: var(--soft); }
-    .btn-secondary:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-secondary:hover:not(:disabled) { background: var(--soft); border-color: rgba(148,163,184,0.35); }
+    .btn-secondary:disabled { opacity: 0.42; cursor: not-allowed; }
 
     .seg-track {
       background: var(--soft);
-      padding: 4px;
-      border-radius: 10px;
+      padding: 3px;
+      border-radius: 11px;
       display: inline-flex;
-      gap: 4px;
+      gap: 3px;
       flex-wrap: wrap;
+      border: 1px solid var(--line);
     }
     .seg-pill {
-      padding: 6px 12px;
-      border-radius: 7px;
-      font-size: 13px;
-      font-weight: 600;
+      padding: 6px 11px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
       color: var(--muted);
       transition: all 0.14s ease;
     }
+    .seg-pill:hover { color: var(--ink); }
     .seg-pill.active {
       background: var(--card);
       color: var(--ink);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.14);
     }
+    html.dark .seg-pill.active {
+      background: linear-gradient(180deg, #1E2E42 0%, #162334 100%);
+      color: #F8FAFC;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .preset-btn {
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--card-elev);
+      border: 1px solid var(--line);
+      color: var(--ink);
+      transition: all 0.14s ease;
+    }
+    .preset-btn:hover { border-color: var(--mint-border); color: #10B981; transform: translateY(-1px); }
 
     .pos-tag {
       display: inline-flex;
@@ -158,45 +243,60 @@
       padding: 2px 0;
       border-radius: 5px;
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 800;
+      letter-spacing: 0.02em;
     }
     .pos-GOL { background: #FEF3C7; color: #92400E; }
     .pos-LAT { background: #E0F2FE; color: #075985; }
     .pos-ZAG { background: #DBEAFE; color: #1E40AF; }
     .pos-MEI { background: #DCFCE7; color: #166534; }
     .pos-ATA { background: #FFE4E6; color: #9F1239; }
-    html.dark .pos-GOL { background: rgba(245,158,11,0.2); color: #FCD34D; }
-    html.dark .pos-LAT { background: rgba(14,165,233,0.2); color: #7DD3FC; }
-    html.dark .pos-ZAG { background: rgba(59,130,246,0.2); color: #93C5FD; }
-    html.dark .pos-MEI { background: rgba(34,197,94,0.2); color: #86EFAC; }
-    html.dark .pos-ATA { background: rgba(244,63,94,0.2); color: #FDA4AF; }
+    html.dark .pos-GOL { background: rgba(245,158,11,0.20); color: #FCD34D; }
+    html.dark .pos-LAT { background: rgba(14,165,233,0.20); color: #7DD3FC; }
+    html.dark .pos-ZAG { background: rgba(59,130,246,0.20); color: #93C5FD; }
+    html.dark .pos-MEI { background: rgba(16,185,129,0.20); color: #6EE7B7; }
+    html.dark .pos-ATA { background: rgba(244,63,94,0.22); color: #FDA4AF; }
 
     .mini-pitch {
-      background: repeating-linear-gradient(
-        0deg,
-        #1B7340 0px,
-        #1B7340 36px,
-        #208048 36px,
-        #208048 72px
-      );
-      border-radius: 12px;
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.06) 0%, transparent 65%),
+        repeating-linear-gradient(
+          0deg,
+          #165E35 0px,
+          #165E35 34px,
+          #1B6E3F 34px,
+          #1B6E3F 68px
+        );
+      border-radius: 14px;
       position: relative;
-      border: 2px solid rgba(255,255,255,0.35);
+      border: 2px solid rgba(255,255,255,0.26);
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.32);
+      overflow: hidden;
     }
     .mini-pitch::before {
       content: '';
       position: absolute;
       left: 0; right: 0; top: 50%;
-      height: 1px;
+      height: 1.5px;
       background: rgba(255,255,255,0.28);
+      pointer-events: none;
+    }
+    .mini-pitch::after {
+      content: '';
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 72px; height: 72px;
+      margin-left: -36px; margin-top: -36px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.25);
       pointer-events: none;
     }
 
     .row-pick {
       border: 1px solid var(--line);
-      border-radius: 10px;
+      border-radius: 11px;
       background: var(--card);
-      transition: border-color 0.12s ease, background-color 0.12s ease;
+      transition: border-color 0.14s ease, background-color 0.14s ease, transform 0.12s ease;
     }
     .row-pick.picked {
       background: var(--mint);
@@ -206,11 +306,12 @@
     /* Draw Roulette Animation Stage */
     .roulette-window {
       position: relative;
-      height: 118px;
+      height: 128px;
       overflow: hidden;
-      border-radius: 14px;
+      border-radius: 16px;
       background: var(--soft);
       border: 1.5px solid var(--line);
+      box-shadow: inset 0 4px 20px rgba(0,0,0,0.22);
     }
     .roulette-window::before,
     .roulette-window::after {
@@ -218,17 +319,17 @@
       position: absolute;
       top: 0;
       bottom: 0;
-      width: 64px;
+      width: 72px;
       z-index: 10;
       pointer-events: none;
     }
     .roulette-window::before {
       left: 0;
-      background: linear-gradient(90deg, var(--soft) 10%, transparent 100%);
+      background: linear-gradient(90deg, var(--bg) 12%, transparent 100%);
     }
     .roulette-window::after {
       right: 0;
-      background: linear-gradient(270deg, var(--soft) 10%, transparent 100%);
+      background: linear-gradient(270deg, var(--bg) 12%, transparent 100%);
     }
     .roulette-pointer {
       position: absolute;
@@ -237,7 +338,8 @@
       left: 50%;
       width: 3px;
       margin-left: -1.5px;
-      background: #16A34A;
+      background: linear-gradient(180deg, #F5C542 0%, #10B981 100%);
+      box-shadow: 0 0 12px rgba(245, 197, 66, 0.75);
       z-index: 20;
       pointer-events: none;
     }
@@ -245,10 +347,10 @@
       content: '';
       position: absolute;
       top: 0;
-      left: -6px;
-      border-left: 7.5px solid transparent;
-      border-right: 7.5px solid transparent;
-      border-top: 9px solid #16A34A;
+      left: -7px;
+      border-left: 8.5px solid transparent;
+      border-right: 8.5px solid transparent;
+      border-top: 10px solid #F5C542;
     }
     .roulette-strip {
       display: flex;
@@ -259,29 +361,37 @@
     }
     .roulette-card {
       width: 154px;
-      height: 92px;
+      height: 98px;
       flex-shrink: 0;
-      background: var(--card);
+      background: var(--card-elev);
       border: 1.5px solid var(--line);
-      border-radius: 12px;
+      border-radius: 13px;
       padding: 10px 12px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
     }
+    .roulette-card.tier-icon {
+      border-color: rgba(245, 197, 66, 0.7);
+      background: linear-gradient(145deg, rgba(245,197,66,0.22) 0%, var(--card-elev) 75%);
+    }
+    .roulette-card.tier-gold {
+      border-color: rgba(16, 185, 129, 0.45);
+      background: linear-gradient(145deg, rgba(16,185,129,0.14) 0%, var(--card-elev) 75%);
+    }
     .roulette-card.winner-hit {
-      border-color: #16A34A;
+      border-color: #10B981;
       background: var(--mint);
-      transform: scale(1.05);
-      box-shadow: 0 8px 20px rgba(22, 163, 74, 0.18);
+      transform: scale(1.06);
+      box-shadow: 0 10px 24px rgba(16, 185, 129, 0.28);
     }
     .roulette-card.winner-craque {
-      border-color: #EAB308;
-      background: #FEF9C3;
-      color: #141A16;
-      transform: scale(1.06);
-      box-shadow: 0 8px 24px rgba(234, 179, 8, 0.28);
+      border-color: #F5C542;
+      background: linear-gradient(145deg, #FDE047 0%, #EAB308 100%);
+      color: #0F1419;
+      transform: scale(1.08);
+      box-shadow: 0 10px 30px rgba(245, 197, 66, 0.45);
     }
 
     @keyframes popInCard {
@@ -294,38 +404,41 @@
     }
 
     input[type="text"], select, textarea {
-      background: var(--card);
+      background: var(--card-elev);
       color: var(--ink);
       border: 1px solid var(--line);
     }
     input[type="text"]:focus, select:focus, textarea:focus {
       outline: none;
-      border-color: #16A34A;
+      border-color: #10B981;
+      box-shadow: 0 0 0 2px rgba(16,185,129,0.18);
     }
 
     .crest-btn {
       border: 1.5px solid var(--line);
-      background: var(--card);
-      border-radius: 12px;
-      padding: 8px 6px;
+      background: var(--card-elev);
+      border-radius: 13px;
+      padding: 9px 6px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 5px;
-      transition: transform 0.12s ease, border-color 0.14s ease, background-color 0.14s ease;
+      gap: 6px;
+      transition: transform 0.14s ease, border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
     }
     .crest-btn:hover:not(:disabled) {
-      border-color: #98A89E;
-      transform: translateY(-1px);
+      border-color: rgba(245, 197, 66, 0.65);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.18);
     }
     .crest-btn.selected {
       background: var(--mint);
       border-color: var(--mint-border);
-      box-shadow: 0 2px 8px rgba(22, 163, 74, 0.12);
+      box-shadow: 0 0 0 1px rgba(16,185,129,0.35), 0 6px 18px rgba(16, 185, 129, 0.18);
     }
     .crest-btn.taken {
-      opacity: 0.46;
+      opacity: 0.38;
+      filter: grayscale(0.6);
       cursor: not-allowed;
     }
     .crest-inline {
@@ -335,33 +448,151 @@
       flex-shrink: 0;
       vertical-align: middle;
     }
-    .crest-inline svg {
+    .crest-inline svg, .crest-inline img {
       display: block;
       width: 100%;
       height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.32));
     }
+
+    /* Broadcast Scoreboard & Live Stats */
+    .broadcast-sb {
+      background: linear-gradient(180deg, #101A27 0%, #0A1018 100%);
+      color: #F8FAFC;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow: 0 14px 32px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 16px;
+      padding: 10px 16px;
+      background: rgba(255,255,255,0.025);
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    @media (min-width: 720px) { .stats-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .stat-mini { display: flex; flex-direction: column; gap: 3px; }
+    .stat-mini-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700; }
+    .stat-mini-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: #94A3B8; }
+    .stat-bar { display: flex; height: 4px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,0.09); gap: 2px; }
+    .stat-bar .bh { background: #10B981; transition: width 0.25s ease; }
+    .stat-bar .ba { background: #F5C542; transition: width 0.25s ease; }
+
+    /* Súmula FIFA Clássica (estilo tela de simulação dos FIFAs antigos) */
+    .sheet-stage {
+      position: relative;
+      border-radius: 16px;
+      padding: 12px;
+      background:
+        radial-gradient(ellipse 80% 40% at 50% 0%, rgba(255,255,255,0.16), transparent 55%),
+        radial-gradient(ellipse 90% 45% at 50% 100%, rgba(34,197,94,0.38), transparent 62%),
+        linear-gradient(180deg, #0D1622 0%, #101A26 62%, #133B1E 100%);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 20px 44px rgba(0,0,0,0.45);
+    }
+    .sheet {
+      background: rgba(11, 15, 20, 0.88);
+      backdrop-filter: blur(8px);
+      color: #ECF2EE;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.10);
+      overflow: hidden;
+    }
+    .sheet-grid { display: grid; grid-template-columns: 1fr; }
+    @media (min-width: 900px) { .sheet-grid { grid-template-columns: 1.65fr 1fr; } }
+    .sheet-left { display: flex; flex-direction: column; }
+    .sheet-head {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sheet-score {
+      font-family: var(--display);
+      font-size: 38px;
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: #FFFFFF;
+    }
+    .sheet-lineups { display: grid; grid-template-columns: 1fr 1fr; }
+    .sheet-col { padding: 6px 0 10px; }
+    .sheet-col + .sheet-col { border-left: 1px solid rgba(255,255,255,0.05); }
+    .sheet-row { display: flex; align-items: center; gap: 6px; padding: 3.5px 12px; font-size: 12px; font-weight: 600; min-height: 25px; color: #F1F5F9; }
+    .sheet-row.alt { background: rgba(255,255,255,0.04); }
+    .sheet-row .num { width: 22px; text-align: right; color: #94A3B8; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .sheet-row.right .num { text-align: left; }
+    .sheet-row.bench { color: #64748B; font-weight: 500; }
+    .sheet-row.subbed-out { color: #64748B; }
+    .sheet-row.right { flex-direction: row-reverse; text-align: right; }
+    .sheet-row .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sheet-sep { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: #94A3B8; padding: 7px 12px 3px; background: rgba(255,255,255,0.025); border-top: 1px solid rgba(255,255,255,0.05); }
+    .sheet-right { border-left: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; }
+    @media (max-width: 899px) { .sheet-right { border-left: 0; border-top: 1px solid rgba(255,255,255,0.08); } }
+    .sheet-clock-bar {
+      text-align: center;
+      font-family: var(--display);
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      color: #F8FAFC;
+    }
+    .sheet-events { flex: 1; padding: 4px 0; max-height: 290px; overflow-y: auto; }
+    .sheet-ev { display: flex; align-items: center; gap: 8px; padding: 5px 12px; font-size: 12px; font-weight: 600; }
+    .sheet-ev.alt { background: rgba(255,255,255,0.04); }
+    .sheet-ev .min { width: 28px; color: #CBD5E1; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .sheet-latest-head {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.07);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      color: #CBD5E1;
+    }
+    .sheet-latest { padding: 4px 0; max-height: 140px; overflow-y: auto; }
+    .sheet-latest-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 12px; font-size: 11px; font-weight: 600; color: #CBD5E1; }
+    .sheet-latest-row.alt { background: rgba(255,255,255,0.03); }
+    .ico-up { color: #22C55E; font-weight: 900; font-size: 11px; }
+    .ico-down { color: #EF4444; font-weight: 900; font-size: 11px; }
+    .ico-yel { display: inline-block; width: 8px; height: 11px; background: #FACC15; border-radius: 1.5px; box-shadow: 0 0 4px rgba(250,204,21,0.4); }
+    .ico-tac { color: #38BDF8; font-weight: 900; font-size: 11px; }
+    .stam-bar { height: 4px; border-radius: 2px; background: rgba(128,128,128,0.28); overflow: hidden; }
+    .stam-bar > i { display: block; height: 100%; }
   </style>
 </head>
 <body>
 
-  <!-- MINIMAL TOP HEADER -->
-  <header class="border-b" style="border-color: var(--line); background: var(--card);">
+  <!-- BROADCAST TOP HEADER -->
+  <header class="sticky top-0 z-40 border-b backdrop-blur-md" style="border-color: var(--line); background: color-mix(in srgb, var(--card) 86%, transparent);">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
       <div class="flex items-center gap-3">
         <button type="button" id="btn-leave-room" data-action="leave-room" class="hidden text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-lg hover:opacity-80" style="color: var(--muted);">
-          ← Sair da sala
+          ← Sair
         </button>
         <button type="button" data-action="leave-room" class="flex items-center gap-2 text-left">
-          <span class="inline-flex items-center justify-center w-7 h-7 rounded-md text-xs font-extrabold tracking-tight" style="background:#F6C945; color:#141A16; transform: rotate(-4deg);">11</span>
-          <span class="font-extrabold text-xl tracking-tight" style="letter-spacing:-0.03em;">fifoot</span>
+          <span class="font-display inline-flex items-center justify-center w-8 h-8 rounded-lg text-base font-black tracking-tight shadow-sm" style="background:linear-gradient(135deg,#F7CE4E,#E0A516); color:#0B1014; transform: rotate(-3deg);">11</span>
+          <span class="font-display font-black text-2xl tracking-wide uppercase" style="line-height:1;">fifoot</span>
         </button>
-        <span id="net-mode-badge" class="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full" style="background: var(--soft); color: var(--muted);"><span id="net-mode-dot" class="w-2 h-2 rounded-full bg-amber-500"></span><span id="net-mode-text">Conectando rede...</span></span>
-        <span id="room-badge-top" class="hidden text-xs font-bold px-2.5 py-0.5 rounded-full" style="background: var(--soft); color: var(--muted);"></span>
+        <span id="net-mode-badge" class="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full border" style="background: var(--soft); border-color: var(--line); color: var(--muted);"><span id="net-mode-dot" class="w-2 h-2 rounded-full bg-amber-500"></span><span id="net-mode-text">Conectando rede...</span></span>
+        <span id="room-badge-top" class="hidden text-xs font-bold px-2.5 py-0.5 rounded-full border" style="background: var(--soft); border-color: var(--line); color: var(--muted);"></span>
       </div>
 
       <div class="flex items-center gap-2">
         <button type="button" data-action="open-db-modal" class="btn-secondary px-3 py-1.5 text-xs">
-          Jogadores (263)
+          Elencos (263)
         </button>
         <button type="button" id="btn-sound" data-action="toggle-sound" class="btn-secondary w-8 h-8 flex items-center justify-center text-xs" title="Som" aria-label="Alternar som">
           <svg id="icon-sound-on" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
@@ -380,41 +611,57 @@
     <!-- SCREEN 1: HOME ONLINE (Seu nome, Entrar c/ Código, Salas Abertas)   -->
     <!-- =================================================================== -->
     <section id="screen-home" class="space-y-8">
-      <!-- Hero Banner -->
-      <div class="summary-yellow p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-        <div class="lg:col-span-7 space-y-3">
-          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight" style="letter-spacing:-0.03em;">
-            Sorteio por posição.<br/>Mercado livre entre amigos.
+      <!-- Stadium Broadcast Hero -->
+      <div class="stadium-hero p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-7 items-center">
+        <div class="lg:col-span-7 space-y-4 relative z-10">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider" style="background:rgba(245,197,66,0.16); color:#F5C542; border:1px solid rgba(245,197,66,0.35);">
+            <span>★ Modo Torneio Clássico</span>
+            <span class="opacity-50">•</span>
+            <span>40 Escudos Oficiais</span>
+          </div>
+          <h1 class="font-display text-4xl sm:text-5xl font-black uppercase tracking-tight leading-[1.02]">
+            Sorteie seu elenco.<br/><span style="color:#F5C542;">Mande na tática.</span> Leve a taça.
           </h1>
-          <p class="text-sm sm:text-base opacity-85 max-w-xl leading-relaxed">
-            Coloque seu nome, crie uma sala online com os amigos ou jogue contra a CPU, faça trocas livres sem limite de jogadores e dispute a taça nos botões 2D.
+          <p class="text-sm sm:text-base text-slate-300 max-w-xl leading-relaxed">
+            O clássico torneio de grupo dos FIFAs antigos direto no navegador: sorteio por posição na roleta, trocas livres entre amigos, 8 formações, táticas com peso real, substituições e súmula ao vivo.
           </p>
+          <div class="hero-crest-strip pt-1">
+            <span class="hero-crest-chip" title="Flamengo"><img src="crests/fla.png" alt="Flamengo"></span>
+            <span class="hero-crest-chip" title="Palmeiras"><img src="crests/pal.png" alt="Palmeiras"></span>
+            <span class="hero-crest-chip" title="São Paulo"><img src="crests/spfc.png" alt="São Paulo"></span>
+            <span class="hero-crest-chip" title="Corinthians"><img src="crests/cor.png" alt="Corinthians"></span>
+            <span class="hero-crest-chip" title="Real Madrid"><img src="crests/rma.png" alt="Real Madrid"></span>
+            <span class="hero-crest-chip" title="Barcelona"><img src="crests/fcb.png" alt="Barcelona"></span>
+            <span class="hero-crest-chip" title="Manchester City"><img src="crests/mci.png" alt="Man City"></span>
+            <span class="hero-crest-chip" title="Bayern"><img src="crests/bay.png" alt="Bayern"></span>
+            <span class="text-[11px] font-bold text-slate-400 pl-1">+32 clubes</span>
+          </div>
         </div>
 
         <!-- Identity & Join / Create Box -->
-        <div class="lg:col-span-5 bg-white/95 text-[#141A16] rounded-2xl p-5 space-y-4 shadow-sm">
+        <div class="lg:col-span-5 relative z-10 rounded-2xl p-5 space-y-4 border" style="background:rgba(10,16,24,0.82); border-color:rgba(255,255,255,0.12); backdrop-filter:blur(10px);">
           <div class="space-y-1.5">
             <div class="flex items-center justify-between">
-              <label for="my-nick-input" class="block text-xs font-bold text-[#637067]">Seu nome de técnico</label>
-              <span class="text-[11px] font-semibold text-[#637067]">Escudo escolhido na sala</span>
+              <label for="my-nick-input" class="block text-xs font-bold text-slate-300">Seu nome de técnico</label>
+              <span class="text-[11px] font-semibold text-emerald-400">Escudo escolhido na sala</span>
             </div>
-            <input type="text" id="my-nick-input" maxlength="20" placeholder="Ex: Gustavo" class="w-full rounded-lg px-3.5 py-2.5 text-sm font-bold bg-white text-[#141A16] border border-[#CBD5CF]" />
+            <input type="text" id="my-nick-input" maxlength="20" placeholder="Ex: Gustavo" class="w-full rounded-xl px-3.5 py-2.5 text-sm font-bold !bg-[#0E1722] !text-white !border-white/15" />
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <button type="button" data-action="go-create-setup" class="btn-primary w-full py-3 px-3 text-sm">
               Criar sala online
             </button>
-            <button type="button" data-action="go-cpu-setup" class="btn-secondary w-full py-3 px-3 text-sm">
-              Jogar contra CPU
+            <button type="button" data-action="go-cpu-setup" class="w-full py-3 px-3 text-sm font-bold rounded-xl border border-white/15 bg-white/5 text-white hover:bg-white/10 transition">
+              Torneio vs CPU
             </button>
           </div>
 
-          <div class="pt-2 border-t border-[#E3E8E5] space-y-2">
-            <label for="join-code-input" class="block text-xs font-bold text-[#637067]">Ou entrar com código de convite</label>
+          <div class="pt-3 border-t border-white/10 space-y-2">
+            <label for="join-code-input" class="block text-xs font-bold text-slate-400">Ou entrar com código de convite</label>
             <div class="flex gap-2">
-              <input type="text" id="join-code-input" maxlength="10" placeholder="Ex: FIFO-4821" class="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase bg-white text-[#141A16] border border-[#CBD5CF]" />
-              <button type="button" data-action="join-by-code" class="px-4 py-2 rounded-lg text-xs font-bold bg-[#141A16] text-white hover:opacity-90">
+              <input type="text" id="join-code-input" maxlength="10" placeholder="Ex: FIFO-4821" class="flex-1 rounded-xl px-3 py-2 text-xs font-bold uppercase !bg-[#0E1722] !text-white !border-white/15" />
+              <button type="button" data-action="join-by-code" class="px-4 py-2 rounded-xl text-xs font-extrabold transition" style="background:#F5C542; color:#0B1014;">
                 Entrar
               </button>
             </div>
@@ -422,28 +669,32 @@
         </div>
       </div>
 
-      <!-- Salas Abertas Agora (100pracada style) -->
+      <!-- Salas Abertas Agora -->
       <div class="space-y-3">
         <div class="flex items-center justify-between">
-          <h2 class="text-lg font-extrabold tracking-tight">Salas abertas agora</h2>
+          <h2 class="font-display text-2xl font-extrabold uppercase tracking-wide">Salas abertas agora</h2>
           <span class="text-xs font-medium" style="color: var(--muted);">Entre como convidado ou crie a sua acima</span>
         </div>
         <div id="open-rooms-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
       </div>
 
-      <!-- 3-Step Minimal How-It-Works -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-4 border-t" style="border-color: var(--line);">
-        <div class="space-y-1">
-          <div class="text-xs font-extrabold" style="color: #16A34A;">1 • Sala e sorteio</div>
-          <p class="text-xs leading-relaxed" style="color: var(--muted);">Cada amigo entra com seu nome e dá pronto. O host gira a roleta posição por posição para montar os elencos de 15 atletas.</p>
+      <!-- 4-Step Flow -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t" style="border-color: var(--line);">
+        <div class="surface p-4 space-y-1.5">
+          <div class="text-xs font-extrabold uppercase tracking-wider" style="color: #10B981;">1 • Sorteio na roleta</div>
+          <p class="text-xs leading-relaxed" style="color: var(--muted);">Escolha seu escudo oficial e gire a roleta posição por posição para montar elencos de 15 atletas.</p>
         </div>
-        <div class="space-y-1">
-          <div class="text-xs font-extrabold" style="color: #16A34A;">2 • Mercado livre</div>
-          <p class="text-xs leading-relaxed" style="color: var(--muted);">Escale seus 11 titulares, marque quem está disponível ou intocável e envie propostas ou contrapropostas livres com quantos atletas quiser.</p>
+        <div class="surface p-4 space-y-1.5">
+          <div class="text-xs font-extrabold uppercase tracking-wider" style="color: #10B981;">2 • Trocas e escalação</div>
+          <p class="text-xs leading-relaxed" style="color: var(--muted);">Negocie livremente com a sala, teste 8 formações e defina seus 11 titulares e 4 reservas.</p>
         </div>
-        <div class="space-y-1">
-          <div class="text-xs font-extrabold" style="color: #16A34A;">3 • Taça nos botões 2D</div>
-          <p class="text-xs leading-relaxed" style="color: var(--muted);">Quando todos dão pronto, o mercado fecha e os confrontos rolam ao vivo no gramado 2D de botões até sair o campeão.</p>
+        <div class="surface p-4 space-y-1.5">
+          <div class="text-xs font-extrabold uppercase tracking-wider" style="color: #F5C542;">3 • Tática de verdade</div>
+          <p class="text-xs leading-relaxed" style="color: var(--muted);">Postura, pressão, estilo de jogo, cansaço e 3 substituições mudam o rumo da partida ao vivo.</p>
+        </div>
+        <div class="surface p-4 space-y-1.5">
+          <div class="text-xs font-extrabold uppercase tracking-wider" style="color: #F5C542;">4 • Súmula estilo FIFA</div>
+          <p class="text-xs leading-relaxed" style="color: var(--muted);">Acompanhe no campo 2D ou na súmula clássica com gols, cartões, trocas e placares da rodada.</p>
         </div>
       </div>
     </section>
@@ -773,10 +1024,14 @@
             </div>
             <div class="flex items-center gap-2">
               <select id="my-formation-select" class="rounded-lg px-2.5 py-1.5 text-xs font-bold">
-                <option value="4-3-3">4-3-3</option>
-                <option value="4-4-2">4-4-2</option>
-                <option value="3-5-2">3-5-2</option>
-                <option value="4-2-4">4-2-4</option>
+                <option value="4-3-3">4-3-3 (Pontas)</option>
+                <option value="4-4-2">4-4-2 (Clássica)</option>
+                <option value="4-2-3-1">4-2-3-1 (Meio forte)</option>
+                <option value="4-1-4-1">4-1-4-1 (Compacta)</option>
+                <option value="3-5-2">3-5-2 (3 Zagueiros)</option>
+                <option value="3-4-3">3-4-3 (Ofensiva)</option>
+                <option value="5-3-2">5-3-2 (Retranca)</option>
+                <option value="4-2-4">4-2-4 (Tudo ou nada)</option>
               </select>
               <button type="button" data-action="auto-scale-mine" class="btn-secondary px-2.5 py-1.5 text-xs">Auto-escalar</button>
             </div>
@@ -866,6 +1121,9 @@
             <p class="text-xs mt-0.5" style="color: var(--muted);">Ajuste a postura do seu time se quiser e dê pronto para o host autorizar o apito inicial.</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
+            <button type="button" data-action="open-tourney-lineup" class="btn-secondary px-3.5 py-2 text-xs sm:text-sm font-bold">
+              Escalar / Formação
+            </button>
             <button type="button" id="btn-prematch-ready" data-action="toggle-my-ready" class="btn-ready not-ready px-4 py-2 text-xs sm:text-sm">
               Dar pronto pra partida
             </button>
@@ -877,73 +1135,137 @@
         <div id="prematch-ready-chips" class="flex flex-wrap gap-1.5"></div>
       </div>
 
-      <!-- 2D BUTTON FOOTBALL ARENA -->
+      <!-- 2D BUTTON FOOTBALL & FIFA SIM ARENA -->
       <div class="surface p-4 sm:p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <span id="arena-round-tag" class="text-xs font-bold px-2.5 py-0.5 rounded-full" style="background: var(--soft); color: var(--muted);">Confronto</span>
-            <h2 id="arena-names-heading" class="text-lg font-extrabold mt-1">Partida</h2>
+            <span id="arena-round-tag" class="text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full" style="background: var(--mint); color: #10B981;">Confronto</span>
+            <h2 id="arena-names-heading" class="font-display text-2xl font-extrabold uppercase tracking-wide mt-0.5">Partida</h2>
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
+            <div class="seg-track" title="Modo de visualização">
+              <button type="button" data-action="set-arena-view" data-view="HYBRID" id="aview-HYBRID" class="seg-pill active">Híbrido</button>
+              <button type="button" data-action="set-arena-view" data-view="FIFA" id="aview-FIFA" class="seg-pill">Súmula FIFA</button>
+              <button type="button" data-action="set-arena-view" data-view="PITCH" id="aview-PITCH" class="seg-pill">Campo 2D</button>
+            </div>
             <div class="seg-track">
               <button type="button" data-action="set-match-speed" data-spd="1" id="mspd-1" class="seg-pill active">1x</button>
               <button type="button" data-action="set-match-speed" data-spd="2" id="mspd-2" class="seg-pill">2x</button>
               <button type="button" data-action="set-match-speed" data-spd="4" id="mspd-4" class="seg-pill">4x</button>
             </div>
             <button type="button" id="btn-sim-fast" data-action="host-sim-fast" class="hidden btn-secondary px-3 py-2 text-xs">
-              Acelerar final deste jogo
+              Acelerar final
             </button>
           </div>
         </div>
 
-        <!-- Scoreboard -->
-        <div class="rounded-xl p-3 sm:p-4 border grid grid-cols-12 items-center gap-2" style="background: var(--soft); border-color: var(--line);">
-          <div class="col-span-5 flex items-center justify-end gap-2.5 text-right">
-            <div class="min-w-0">
-              <div id="sb-home-label" class="font-extrabold text-sm sm:text-base truncate">Casa</div>
-              <div id="sb-home-goals-list" class="text-[11px] truncate" style="color: var(--muted);"></div>
+        <!-- Broadcast Scoreboard + Live Stats -->
+        <div class="broadcast-sb">
+          <div class="p-3.5 sm:p-4 grid grid-cols-12 items-center gap-2">
+            <div class="col-span-5 flex items-center justify-end gap-3 text-right">
+              <div class="min-w-0">
+                <div id="sb-home-label" class="font-extrabold text-sm sm:text-base truncate text-white">Casa</div>
+                <div id="sb-home-goals-list" class="text-[11px] truncate text-slate-400"></div>
+              </div>
+              <span id="sb-home-crest" class="crest-inline w-10 h-10 sm:w-11 sm:h-11 shrink-0"></span>
             </div>
-            <span id="sb-home-crest" class="crest-inline w-8 h-8 sm:w-9 sm:h-9 shrink-0"></span>
-          </div>
 
-          <div class="col-span-2 text-center">
-            <div id="sb-scoreline" class="text-xl sm:text-2xl font-extrabold tracking-tight">0 - 0</div>
-            <div id="sb-minute" class="text-[11px] font-bold" style="color: #15803D;">00'</div>
-          </div>
+            <div class="col-span-2 text-center">
+              <div id="sb-scoreline" class="font-display text-3xl sm:text-4xl font-black tracking-wider text-white leading-none">0 - 0</div>
+              <div id="sb-minute" class="text-xs font-extrabold mt-1" style="color: #34D399;">00'</div>
+            </div>
 
-          <div class="col-span-5 flex items-center justify-start gap-2.5 text-left">
-            <span id="sb-away-crest" class="crest-inline w-8 h-8 sm:w-9 sm:h-9 shrink-0"></span>
-            <div class="min-w-0">
-              <div id="sb-away-label" class="font-extrabold text-sm sm:text-base truncate">Fora</div>
-              <div id="sb-away-goals-list" class="text-[11px] truncate" style="color: var(--muted);"></div>
+            <div class="col-span-5 flex items-center justify-start gap-3 text-left">
+              <span id="sb-away-crest" class="crest-inline w-10 h-10 sm:w-11 sm:h-11 shrink-0"></span>
+              <div class="min-w-0">
+                <div id="sb-away-label" class="font-extrabold text-sm sm:text-base truncate text-white">Fora</div>
+                <div id="sb-away-goals-list" class="text-[11px] truncate text-slate-400"></div>
+              </div>
             </div>
           </div>
+          <div id="sb-stats-strip" class="stats-strip hidden"></div>
         </div>
 
         <!-- 2D Pitch Canvas -->
-        <div id="pitch-canvas-wrap" class="w-full rounded-xl overflow-hidden border relative" style="aspect-ratio: 16 / 9; max-height: 440px; border-color: var(--line); background: #1B7340;">
+        <div id="pitch-canvas-wrap" class="w-full rounded-2xl overflow-hidden border relative shadow-lg" style="aspect-ratio: 16 / 9; max-height: 440px; border-color: rgba(255,255,255,0.14); background: #165E35;">
           <canvas id="pitch-canvas" class="w-full h-full block"></canvas>
-          <div id="goal-overlay" class="hidden absolute inset-0 bg-black/45 flex items-center justify-center pointer-events-none">
-            <div class="px-6 py-3 rounded-2xl text-center shadow-lg" style="background:#F6C945; color:#141A16;">
-              <div class="text-xs font-bold uppercase tracking-wider">Gol na partida</div>
-              <div id="goal-overlay-text" class="text-xl sm:text-2xl font-extrabold mt-0.5">Jogador • 10'</div>
+          <div id="goal-overlay" class="hidden absolute inset-0 bg-black/55 backdrop-blur-[2px] flex items-center justify-center pointer-events-none">
+            <div class="px-7 py-4 rounded-2xl text-center shadow-2xl border border-yellow-200/60" style="background:linear-gradient(135deg,#F7CE4E,#E0A516); color:#0B1014;">
+              <div class="text-xs font-black uppercase tracking-[0.18em]">Gooool!</div>
+              <div id="goal-overlay-text" class="font-display text-3xl sm:text-4xl font-black uppercase mt-0.5">Jogador • 10'</div>
             </div>
           </div>
         </div>
 
-        <!-- My Tactical Stance & Match Ticker -->
-        <div class="flex flex-wrap items-center justify-between gap-3 text-xs pt-1">
-          <div class="flex items-center gap-2">
-            <span class="font-semibold" style="color: var(--muted);">Sua postura tática:</span>
-            <div class="seg-track">
-              <button type="button" data-action="set-my-stance" data-st="DEFENSIVE" id="mst-DEFENSIVE" class="seg-pill">Retranca</button>
-              <button type="button" data-action="set-my-stance" data-st="BALANCED" id="mst-BALANCED" class="seg-pill active">Equilibrado</button>
-              <button type="button" data-action="set-my-stance" data-st="ATTACK" id="mst-ATTACK" class="seg-pill">Ofensivo</button>
+        <!-- Súmula FIFA Clássica (no modo FIFA aparece em destaque; no Híbrido aparece logo abaixo do campo) -->
+        <div id="match-sheet" class="hidden"></div>
+
+        <!-- Painel tático -->
+        <div id="tactics-panel" class="rounded-2xl border p-3.5 sm:p-4 space-y-3 text-xs" style="background: var(--soft); border-color: var(--line);">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="font-display text-lg font-extrabold uppercase tracking-wide">Prancheta tática</div>
+              <div class="flex flex-wrap items-center gap-1.5">
+                <button type="button" data-action="tac-preset" data-preset="BLITZ" class="preset-btn">🔥 Blitz</button>
+                <button type="button" data-action="tac-preset" data-preset="COUNTER" class="preset-btn">⚡ Contra-ataque</button>
+                <button type="button" data-action="tac-preset" data-preset="TIKI" class="preset-btn">🎯 Tiki-Taka</button>
+                <button type="button" data-action="tac-preset" data-preset="BUS" class="preset-btn">🧱 Ferrolho</button>
+              </div>
+            </div>
+            <div id="tac-advantage" class="font-extrabold px-2.5 py-1 rounded-full border text-[11px]" style="background: var(--card-elev); border-color: var(--line); color: var(--muted);">Vantagem tática: —</div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+            <div class="md:col-span-3 space-y-1">
+              <div class="text-[10px] font-extrabold uppercase tracking-wider" style="color: var(--muted);">Formação em campo</div>
+              <select id="live-formation-select" class="w-full rounded-lg px-2.5 py-2 text-xs font-bold">
+                <option value="4-3-3">4-3-3 (Pontas)</option>
+                <option value="4-4-2">4-4-2 (Clássica)</option>
+                <option value="4-2-3-1">4-2-3-1 (Meio forte)</option>
+                <option value="4-1-4-1">4-1-4-1 (Compacta)</option>
+                <option value="3-5-2">3-5-2 (3 Zagueiros)</option>
+                <option value="3-4-3">3-4-3 (Ofensiva)</option>
+                <option value="5-3-2">5-3-2 (Retranca)</option>
+                <option value="4-2-4">4-2-4 (Tudo ou nada)</option>
+              </select>
+            </div>
+            <div class="md:col-span-3 space-y-1">
+              <div class="text-[10px] font-extrabold uppercase tracking-wider" style="color: var(--muted);">Postura</div>
+              <div class="seg-track">
+                <button type="button" data-action="set-my-tac" data-k="stance" data-v="DEFENSIVE" class="seg-pill">Retranca</button>
+                <button type="button" data-action="set-my-tac" data-k="stance" data-v="BALANCED" class="seg-pill">Equil.</button>
+                <button type="button" data-action="set-my-tac" data-k="stance" data-v="ATTACK" class="seg-pill">Ofensivo</button>
+              </div>
+            </div>
+            <div class="md:col-span-6 space-y-1">
+              <div class="text-[10px] font-extrabold uppercase tracking-wider" style="color: var(--muted);">Pressão na saída</div>
+              <div class="seg-track">
+                <button type="button" data-action="set-my-tac" data-k="press" data-v="LOW" class="seg-pill">Bloco baixo</button>
+                <button type="button" data-action="set-my-tac" data-k="press" data-v="MID" class="seg-pill">Média</button>
+                <button type="button" data-action="set-my-tac" data-k="press" data-v="HIGH" class="seg-pill">Pressão alta</button>
+              </div>
+            </div>
+            <div class="md:col-span-12 space-y-1">
+              <div class="text-[10px] font-extrabold uppercase tracking-wider" style="color: var(--muted);">Estilo de jogo</div>
+              <div class="seg-track">
+                <button type="button" data-action="set-my-tac" data-k="style" data-v="BALANCED" class="seg-pill">Equilibrado</button>
+                <button type="button" data-action="set-my-tac" data-k="style" data-v="POSSESSION" class="seg-pill">Toque de bola</button>
+                <button type="button" data-action="set-my-tac" data-k="style" data-v="COUNTER" class="seg-pill">Contra-ataque</button>
+                <button type="button" data-action="set-my-tac" data-k="style" data-v="LONG" class="seg-pill">Bola longa</button>
+                <button type="button" data-action="set-my-tac" data-k="style" data-v="WINGS" class="seg-pill">Pelas pontas</button>
+                <button type="button" data-action="set-my-tac" data-k="style" data-v="SHOOT" class="seg-pill">Chute de fora</button>
+              </div>
             </div>
           </div>
-          <div id="match-ticker-text" class="font-medium text-right flex-1 min-w-[180px]" style="color: var(--muted);">
-            Aguardando todos darem pronto para o apito inicial.
+          <div id="tac-hint" class="text-[11px] leading-relaxed" style="color: var(--muted);"></div>
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-1 border-t" style="border-color: var(--line);">
+            <div class="flex items-center gap-2.5">
+              <button type="button" data-action="open-subs" id="btn-open-subs" class="btn-secondary px-3 py-2 text-xs font-bold">Substituições <span id="subs-left">(3)</span></button>
+              <span id="tac-stamina" class="font-bold" style="color: var(--muted);"></span>
+            </div>
+            <div id="match-ticker-text" class="font-semibold text-right flex-1 min-w-[180px]" style="color: var(--ink);">
+              Aguardando todos darem pronto para o apito inicial.
+            </div>
           </div>
         </div>
       </div>
@@ -965,7 +1287,7 @@
 
   <!-- MODAL -->
   <div id="modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-    <div class="surface w-full max-w-2xl max-h-[88vh] overflow-y-auto p-5 space-y-4 shadow-xl">
+    <div class="surface w-full max-w-3xl max-h-[88vh] overflow-y-auto p-5 space-y-4 shadow-xl">
       <div class="flex items-center justify-between border-b pb-3" style="border-color: var(--line);">
         <h3 id="modal-heading" class="text-base font-extrabold">Detalhes</h3>
         <button type="button" data-action="close-modal" class="btn-secondary w-8 h-8 flex items-center justify-center text-sm" aria-label="Fechar">✕</button>
@@ -1271,11 +1593,37 @@
         { role: 'MEI', x: 0.42, y: 0.18 }, { role: 'MEI', x: 0.39, y: 0.40 }, { role: 'MEI', x: 0.39, y: 0.60 }, { role: 'MEI', x: 0.42, y: 0.82 },
         { role: 'ATA', x: 0.66, y: 0.36 }, { role: 'ATA', x: 0.66, y: 0.64 }
       ],
+      '4-2-3-1': [
+        { role: 'GOL', x: 0.06, y: 0.50 },
+        { role: 'LAT', x: 0.21, y: 0.15 }, { role: 'ZAG', x: 0.19, y: 0.38 }, { role: 'ZAG', x: 0.19, y: 0.62 }, { role: 'LAT', x: 0.21, y: 0.85 },
+        { role: 'MEI', x: 0.35, y: 0.36 }, { role: 'MEI', x: 0.35, y: 0.64 },
+        { role: 'MEI', x: 0.50, y: 0.20 }, { role: 'MEI', x: 0.52, y: 0.50 }, { role: 'MEI', x: 0.50, y: 0.80 },
+        { role: 'ATA', x: 0.69, y: 0.50 }
+      ],
+      '4-1-4-1': [
+        { role: 'GOL', x: 0.06, y: 0.50 },
+        { role: 'LAT', x: 0.20, y: 0.15 }, { role: 'ZAG', x: 0.18, y: 0.38 }, { role: 'ZAG', x: 0.18, y: 0.62 }, { role: 'LAT', x: 0.20, y: 0.85 },
+        { role: 'MEI', x: 0.32, y: 0.50 },
+        { role: 'MEI', x: 0.46, y: 0.18 }, { role: 'MEI', x: 0.44, y: 0.39 }, { role: 'MEI', x: 0.44, y: 0.61 }, { role: 'MEI', x: 0.46, y: 0.82 },
+        { role: 'ATA', x: 0.68, y: 0.50 }
+      ],
       '3-5-2': [
         { role: 'GOL', x: 0.06, y: 0.50 },
         { role: 'ZAG', x: 0.20, y: 0.25 }, { role: 'ZAG', x: 0.18, y: 0.50 }, { role: 'ZAG', x: 0.20, y: 0.75 },
         { role: 'MEI', x: 0.39, y: 0.14 }, { role: 'MEI', x: 0.36, y: 0.33 }, { role: 'MEI', x: 0.35, y: 0.50 }, { role: 'MEI', x: 0.36, y: 0.67 }, { role: 'MEI', x: 0.39, y: 0.86 },
         { role: 'ATA', x: 0.66, y: 0.36 }, { role: 'ATA', x: 0.66, y: 0.64 }
+      ],
+      '3-4-3': [
+        { role: 'GOL', x: 0.06, y: 0.50 },
+        { role: 'ZAG', x: 0.20, y: 0.25 }, { role: 'ZAG', x: 0.18, y: 0.50 }, { role: 'ZAG', x: 0.20, y: 0.75 },
+        { role: 'MEI', x: 0.41, y: 0.16 }, { role: 'MEI', x: 0.38, y: 0.39 }, { role: 'MEI', x: 0.38, y: 0.61 }, { role: 'MEI', x: 0.41, y: 0.84 },
+        { role: 'ATA', x: 0.64, y: 0.22 }, { role: 'ATA', x: 0.69, y: 0.50 }, { role: 'ATA', x: 0.64, y: 0.78 }
+      ],
+      '5-3-2': [
+        { role: 'GOL', x: 0.06, y: 0.50 },
+        { role: 'LAT', x: 0.22, y: 0.13 }, { role: 'ZAG', x: 0.18, y: 0.32 }, { role: 'ZAG', x: 0.17, y: 0.50 }, { role: 'ZAG', x: 0.18, y: 0.68 }, { role: 'LAT', x: 0.22, y: 0.87 },
+        { role: 'MEI', x: 0.40, y: 0.28 }, { role: 'MEI', x: 0.37, y: 0.50 }, { role: 'MEI', x: 0.40, y: 0.72 },
+        { role: 'ATA', x: 0.65, y: 0.37 }, { role: 'ATA', x: 0.65, y: 0.63 }
       ],
       '4-2-4': [
         { role: 'GOL', x: 0.06, y: 0.50 },
@@ -1479,9 +1827,15 @@
         .replace(/url\(#c_([a-z0-9_]+)\)/g, 'url(#c_$1_' + u + ')');
     }
 
+    // Escudo oficial (PNG em /crests/<id>.png); se a imagem falhar, cai no SVG desenhado.
+    function crestHtml(club) {
+      const fb = encodeURIComponent(club.svg);
+      return `<img src="crests/${club.id}.png" alt="${esc(club.name)}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='data:image/svg+xml;charset=utf-8,${fb}'">`;
+    }
+
     function renderClubCrest(clubId, size = 24, fallbackUniverse = 'BRASIL') {
       const club = getClubObj(clubId, fallbackUniverse);
-      return `<span class="crest-inline" style="width:${size}px;height:${size}px;" title="${esc(club.name)}">${uniqueClubSvg(club.svg)}</span>`;
+      return `<span class="crest-inline" style="width:${size}px;height:${size}px;" title="${esc(club.name)}">${crestHtml(club)}</span>`;
     }
 
     const CREST_IMG_CACHE = {};
@@ -1493,7 +1847,8 @@
         img.onload = () => {
           if (Client.screen === 'tourney' && typeof MatchEngine !== 'undefined') MatchEngine.draw();
         };
-        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(club.svg);
+        img.onerror = () => { img.onerror = null; img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(club.svg); };
+        img.src = 'crests/' + club.id + '.png';
         CREST_IMG_CACHE[club.id] = img;
         return img;
       }
@@ -1591,7 +1946,7 @@
       name: '',
       clubBr: 'spfc',
       clubEu: 'rma',
-      dark: false,
+      dark: true,
       screen: 'home', // 'home' | 'create' | 'lobby' | 'draft' | 'market' | 'tourney'
       createForm: {
         mode: 'ONLINE', // 'ONLINE' | 'CPU'
@@ -1609,7 +1964,8 @@
         sendUids: [],
         askUids: [],
         counterOfferId: null,
-        fastSpin: false
+        fastSpin: false,
+        arenaView: 'HYBRID' // 'HYBRID' | 'FIFA' | 'PITCH'
       }
     };
 
@@ -2067,12 +2423,16 @@
         }
 
         if (data.type === 'LIVE_STANCE_SYNC') {
+          const tac = sanitizeTac(data.tac || { stance: data.stance });
           if (MatchEngine.running && typeof data.applyTick === 'number') {
-            MatchEngine.enqueueStance(data.clientId, data.stance, data.applyTick);
+            MatchEngine.enqueueTac(data.clientId, tac, data.applyTick);
           } else {
             const mgr = room.managers.find(m => m.id === data.clientId);
             if (mgr) {
-              mgr.stance = data.stance;
+              if (tac.stance) mgr.stance = tac.stance;
+              if (tac.style) mgr.style = tac.style;
+              if (tac.press) mgr.press = tac.press;
+              if (tac.formation && FORMATIONS[tac.formation]) { mgr.formation = tac.formation; autoLineup(mgr); }
               if (Client.screen === 'tourney') renderTourney();
             }
           }
@@ -2174,14 +2534,18 @@
       } else if (action === 'CANCEL_OFFER') {
         room.market.offers = room.market.offers.filter(o => !(o.id === payload.offerId && o.fromId === clientId));
       } else if (action === 'SET_STANCE') {
-        if (['DEFENSIVE', 'BALANCED', 'ATTACK'].includes(payload.stance)) {
+        const tac = sanitizeTac(payload.tac || { stance: payload.stance });
+        if (Object.keys(tac).length) {
           if (MatchEngine.running) {
             const applyTick = MatchEngine.ticks + 18;
-            MatchEngine.enqueueStance(clientId, payload.stance, applyTick);
-            OnlineNet.broadcastFromHost({ type: 'LIVE_STANCE_SYNC', code: room.code, clientId, stance: payload.stance, applyTick });
+            MatchEngine.enqueueTac(clientId, tac, applyTick);
+            OnlineNet.broadcastFromHost({ type: 'LIVE_STANCE_SYNC', code: room.code, clientId, tac, stance: tac.stance, applyTick });
             return;
           }
-          mgr.stance = payload.stance;
+          if (tac.stance) mgr.stance = tac.stance;
+          if (tac.style) mgr.style = tac.style;
+          if (tac.press) mgr.press = tac.press;
+          if (tac.formation && FORMATIONS[tac.formation]) { mgr.formation = tac.formation; autoLineup(mgr); }
         }
       }
 
@@ -2752,18 +3116,21 @@
 
         strip.style.transition = 'none';
         strip.style.transform = 'translate3d(0px, 0, 0)';
-        strip.innerHTML = cards.map((c, idx) => `
-          <div class="roulette-card" id="rcard-${idx}">
+        strip.innerHTML = cards.map((c, idx) => {
+          const tier = c.ovr >= 86 ? 'tier-icon' : (c.ovr >= 82 ? 'tier-gold' : '');
+          return `
+          <div class="roulette-card ${tier}" id="rcard-${idx}">
             <div class="flex items-center justify-between">
               <span class="pos-tag pos-${c.pos}">${c.pos}</span>
-              <span class="text-lg font-extrabold">${c.ovr}</span>
+              <span class="font-display text-2xl font-black leading-none" style="${c.ovr >= 86 ? 'color:#F5C542;' : ''}">${c.ovr}</span>
             </div>
             <div class="min-w-0">
               <div class="text-xs font-extrabold truncate">${esc(c.name)}</div>
               <div class="text-[11px] truncate opacity-70">${esc(c.club)}</div>
             </div>
           </div>
-        `).join('');
+        `;
+        }).join('');
 
         // Force layout before starting CSS transition
         const vw = viewport.clientWidth || 600;
@@ -3553,6 +3920,146 @@
       return Math.sqrt(dx * dx + dy * dy);
     }
 
+    // =========================================================================
+    // 7A. SISTEMA TÁTICO (postura, estilo, pressão, cansaço, substituições)
+    // =========================================================================
+    const TAC_STANCES = { DEFENSIVE: 'Retranca', BALANCED: 'Equilibrado', ATTACK: 'Ofensivo' };
+    const TAC_STYLES = { BALANCED: 'Equilibrado', POSSESSION: 'Toque de bola', COUNTER: 'Contra-ataque', LONG: 'Bola longa', WINGS: 'Pelas pontas', SHOOT: 'Chute de fora' };
+    const TAC_PRESS = { LOW: 'Bloco baixo', MID: 'Pressão média', HIGH: 'Pressão alta' };
+    const TAC_DEFAULT = { stance: 'BALANCED', style: 'BALANCED', press: 'MID' };
+    const TAC_STYLE_HINT = {
+      BALANCED: 'Equilibrado: se adapta ao ritmo da partida sem fraquezas óbvias.',
+      POSSESSION: 'Toque de bola: passes curtos, mais posse e precisão. Domina bloco baixo e bola longa, mas sofre na pressão alta.',
+      COUNTER: 'Contra-ataque: rouba e dispara em velocidade. Letal contra postura ofensiva e pressão alta; trava contra retranca.',
+      LONG: 'Bola longa: ligações diretas que quebram pressão alta, mas perdem a bola contra toque de bola.',
+      WINGS: 'Pelas pontas: força jogadas abertas e cruzamentos. Destrói esquemas com 3 zagueiros (3-5-2 / 3-4-3) e sofre contra linha de 5.',
+      SHOOT: 'Chute de fora: finaliza de média distância para furar retrancas e blocos baixos.'
+    };
+    const TAC_PRESS_HINT = {
+      LOW: 'Bloco baixo: poupa energia e fecha a área, mas cede posse.',
+      MID: 'Pressão média: equilíbrio entre fôlego e intensidade.',
+      HIGH: 'Pressão alta: sufoca toque de bola e rouba bolas perto do gol, mas cansa mais rápido.'
+    };
+    const TAC_PRESETS = {
+      BLITZ: { stance: 'ATTACK', press: 'HIGH', style: 'WINGS', label: 'Blitz Total' },
+      COUNTER: { stance: 'DEFENSIVE', press: 'LOW', style: 'COUNTER', label: 'Contra-ataque Letal' },
+      TIKI: { stance: 'BALANCED', press: 'MID', style: 'POSSESSION', label: 'Tiki-Taka' },
+      BUS: { stance: 'DEFENSIVE', press: 'LOW', style: 'LONG', label: 'Ferrolho' }
+    };
+    const MAX_SUBS = 3;
+
+    function sanitizeTac(p) {
+      const out = {};
+      if (!p || typeof p !== 'object') return out;
+      if (TAC_STANCES[p.stance]) out.stance = p.stance;
+      if (TAC_STYLES[p.style]) out.style = p.style;
+      if (TAC_PRESS[p.press]) out.press = p.press;
+      if (p.formation && FORMATIONS[p.formation]) out.formation = p.formation;
+      if (p.sub && typeof p.sub.out === 'string' && typeof p.sub.in === 'string') out.sub = { out: p.sub.out, in: p.sub.in };
+      return out;
+    }
+
+    function getMgrTac(mgr) {
+      return {
+        stance: (mgr && TAC_STANCES[mgr.stance]) ? mgr.stance : TAC_DEFAULT.stance,
+        style: (mgr && TAC_STYLES[mgr.style]) ? mgr.style : TAC_DEFAULT.style,
+        press: (mgr && TAC_PRESS[mgr.press]) ? mgr.press : TAC_DEFAULT.press
+      };
+    }
+
+    // Médias por setor a partir de uma lista [{role, eff}]
+    function unitsFromList(list, fmtName) {
+      const avg = (roles) => {
+        const a = list.filter(x => roles.includes(x.role));
+        return a.length ? a.reduce((s, x) => s + x.eff, 0) / a.length : 60;
+      };
+      const slots = FORMATIONS[fmtName] || FORMATIONS['4-3-3'];
+      return {
+        atk: avg(['ATA']), mid: avg(['MEI']), def: avg(['ZAG', 'LAT']), gk: avg(['GOL']),
+        midCount: slots.filter(s => s.role === 'MEI').length,
+        defCount: slots.filter(s => s.role === 'ZAG' || s.role === 'LAT').length,
+        wideDefs: slots.filter(s => s.role === 'LAT').length
+      };
+    }
+
+    function unitsFromLineup(mgr) {
+      if (mgr.lineupIds.length !== 11) autoLineup(mgr);
+      const slots = FORMATIONS[mgr.formation] || FORMATIONS['4-3-3'];
+      const list = slots.map((sl, idx) => {
+        const p = mgr.roster.find(x => x.uid === mgr.lineupIds[idx]);
+        return { role: sl.role, eff: slotEffectiveOvr(p, sl.role) };
+      });
+      return unitsFromList(list, mgr.formation || '4-3-3');
+    }
+
+    function tacClamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    // Perfil tático calibrado: cada postura, pressão, estilo e formação altera o comportamento real em campo
+    function buildTacProfile(mgr) {
+      const t = getMgrTac(mgr);
+      const fmt = (mgr && mgr.formation) || '4-3-3';
+      const p = {
+        st: t.stance, style: t.style, press: t.press, fmt,
+        lineShift: 0, shotBias: 0, defCover: 0, pressCount: 1, passRisk: 1,
+        shortPass: false, shotRangeMul: 1, accMul: 1, winBall: 0, fatigue: 1,
+        wideBias: false, counterBias: false, turnover: 0
+      };
+      if (t.stance === 'ATTACK') { p.lineShift += 0.028; p.shotBias += 0.14; p.defCover -= 0.07; p.passRisk *= 1.18; p.fatigue *= 1.08; }
+      else if (t.stance === 'DEFENSIVE') { p.lineShift -= 0.024; p.shotBias -= 0.09; p.defCover += 0.11; p.passRisk *= 0.86; p.fatigue *= 0.90; }
+
+      if (t.press === 'HIGH') { p.pressCount = 2; p.lineShift += 0.015; p.winBall += 0.11; p.fatigue *= 1.26; p.defCover -= 0.02; }
+      else if (t.press === 'LOW') { p.pressCount = 1; p.lineShift -= 0.012; p.winBall -= 0.04; p.fatigue *= 0.78; p.defCover += 0.03; }
+
+      if (t.style === 'POSSESSION') { p.shortPass = true; p.passRisk *= 0.90; p.accMul *= 1.06; p.shotRangeMul *= 0.94; p.turnover -= 0.05; p.fatigue *= 0.95; }
+      else if (t.style === 'COUNTER') { p.counterBias = true; p.passRisk *= 1.16; p.shotBias += 0.05; p.lineShift -= 0.015; }
+      else if (t.style === 'LONG') { p.passRisk *= 1.32; p.turnover += 0.02; p.shotRangeMul *= 1.08; }
+      else if (t.style === 'WINGS') { p.wideBias = true; p.shotRangeMul *= 1.04; p.shotBias += 0.05; }
+      else if (t.style === 'SHOOT') { p.shotRangeMul *= 1.40; p.accMul *= 0.92; p.shotBias += 0.14; }
+
+      if (fmt === '4-4-2') { p.defCover += 0.03; p.shotBias += 0.03; }
+      else if (fmt === '4-2-3-1') { p.passRisk += 0.05; p.defCover += 0.03; p.accMul *= 1.02; }
+      else if (fmt === '4-1-4-1') { p.defCover += 0.05; p.passRisk -= 0.03; p.winBall += 0.03; }
+      else if (fmt === '3-5-2') { p.passRisk += 0.02; p.lineShift += 0.008; p.shotBias += 0.01; p.defCover -= 0.08; }
+      else if (fmt === '3-4-3') { p.lineShift += 0.020; p.shotBias += 0.07; p.defCover -= 0.06; }
+      else if (fmt === '5-3-2') { p.lineShift -= 0.016; p.defCover += 0.07; p.shotBias -= 0.03; }
+      else if (fmt === '4-2-4') { p.lineShift += 0.020; p.shotBias += 0.10; p.defCover -= 0.07; }
+      return p;
+    }
+
+    // Pedra-papel-tesoura tático + qualidade dos setores
+    function tacMatchupEdge(me, op, uMe, uOp) {
+      const e = { atk: 0, ball: 0, acc: 0 };
+      if (me.style === 'COUNTER') {
+        if (op.st === 'ATTACK') e.atk += 0.16;
+        if (op.press === 'HIGH') e.atk += 0.10;
+        if (op.style === 'POSSESSION') e.atk += 0.05;
+        if (op.st === 'DEFENSIVE') e.atk -= 0.09;
+      } else if (me.style === 'POSSESSION') {
+        if (op.press === 'HIGH') { e.ball -= 0.14; e.atk -= 0.06; }
+        if (op.press === 'LOW') { e.ball += 0.10; e.atk += 0.05; }
+        if (op.style === 'LONG') { e.ball += 0.09; e.atk += 0.04; }
+        if (op.style === 'COUNTER') e.atk -= 0.04;
+      } else if (me.style === 'LONG') {
+        if (op.press === 'HIGH') { e.atk += 0.20; e.ball += 0.14; }
+        if (op.style === 'POSSESSION') e.ball -= 0.07;
+      } else if (me.style === 'WINGS') {
+        if (uOp.wideDefs <= 0) { e.atk += 0.24; e.ball += 0.10; e.acc += 0.08; }
+        else if (uOp.defCount >= 5) e.atk -= 0.08;
+        else e.atk += 0.03;
+      } else if (me.style === 'SHOOT') {
+        if (op.press === 'LOW' || op.st === 'DEFENSIVE') { e.acc += 0.16; e.atk += 0.14; }
+        if (op.press === 'HIGH') e.acc -= 0.05;
+      }
+      if (me.press === 'HIGH' && op.style === 'POSSESSION') { e.ball += 0.12; e.atk += 0.08; }
+      if (op.style === 'WINGS' && uMe.wideDefs <= 0) { e.atk -= 0.12; e.ball -= 0.08; }
+      e.ball += (uMe.midCount - uOp.midCount) * 0.020;
+      e.atk += tacClamp((uMe.atk - uOp.def) / 60, -0.2, 0.2);
+      e.ball += tacClamp((uMe.mid - uOp.mid) / 70, -0.15, 0.15);
+      e.atk = tacClamp(e.atk, -0.32, 0.32);
+      e.ball = tacClamp(e.ball, -0.26, 0.26);
+      return e;
+    }
+
     const MatchEngine = {
       matchId: null,
       running: false,
@@ -3571,9 +4078,135 @@
       discs: [],
       ball: { x: 0.5, y: 0.5, vx: 0, vy: 0, cooldown: 0, lastTouchIdx: -1 },
       trail: null,
+      profs: null,
+      edges: null,
+      units: null,
+      profDirty: true,
+      cnt: { H: 0, A: 0 },
 
       enqueueStance(clientId, stance, applyTick) {
-        this.stanceQueue.push({ clientId, stance, applyTick: Number(applyTick) || (this.ticks + 1) });
+        this.enqueueTac(clientId, { stance }, applyTick);
+      },
+
+      enqueueTac(clientId, tac, applyTick) {
+        this.stanceQueue.push({ clientId, tac: sanitizeTac(tac), applyTick: Number(applyTick) || (this.ticks + 1) });
+      },
+
+      curMin() { return Math.max(1, Math.min(90, Math.ceil((this.ticks / this.maxTicks) * 90))); },
+
+      sideOf(m, mgr) { return m.homeId === mgr.id ? 'H' : (m.awayId === mgr.id ? 'A' : null); },
+
+      logEvent(m, ev) {
+        if (!m.events) m.events = [];
+        ev.min = this.curMin();
+        m.events.push(ev);
+      },
+
+      applyTac(m, q, silent) {
+        const mgr = room && room.managers.find(x => x.id === q.clientId);
+        if (!mgr) return;
+        const t = q.tac || {};
+        if (t.stance) mgr.stance = t.stance;
+        if (t.style) mgr.style = t.style;
+        if (t.press) mgr.press = t.press;
+        if (t.formation && FORMATIONS[t.formation] && mgr.formation !== t.formation) {
+          mgr.formation = t.formation;
+          const side = this.sideOf(m, mgr);
+          if (side) {
+            const slots = FORMATIONS[t.formation];
+            const myDiscs = this.discs.filter(d => d.side === side);
+            myDiscs.forEach((d, idx) => {
+              const sl = slots[idx];
+              if (!sl) return;
+              d.role = sl.role;
+              d.ax = side === 'H' ? sl.x : (1 - sl.x);
+              d.ay = side === 'H' ? sl.y : (1 - sl.y);
+              const pObj = mgr.roster.find(x => x.uid === d.uid);
+              if (pObj) {
+                d.ovr = slotEffectiveOvr(pObj, sl.role);
+                d.eff = d.ovr * (0.78 + 0.22 * (d.stam || 100) / 100);
+              }
+            });
+            this.logEvent(m, { t: 'fmt', side, fmt: t.formation });
+            if (!silent) {
+              const tk = document.getElementById('match-ticker-text');
+              if (tk) tk.textContent = mgr.name + ' mudou o esquema para ' + t.formation + '!';
+            }
+          }
+        }
+        if (t.sub) this.doSub(m, mgr, t.sub.out, t.sub.in, silent);
+        this.profDirty = true;
+      },
+
+      doSub(m, mgr, outUid, inUid, silent) {
+        const side = this.sideOf(m, mgr);
+        if (!side || !m.sheet || !m.sheet[side]) return false;
+        if (!m.subs) m.subs = { H: 0, A: 0 };
+        if (m.subs[side] >= MAX_SUBS) return false;
+        const d = this.discs.find(x => x.side === side && x.uid === outUid);
+        const bench = m.sheet[side].bench.find(x => x.uid === inUid && !x.used);
+        const p = mgr.roster.find(x => x.uid === inUid);
+        if (!d || !bench || !p || d.role === 'GOL' || p.pos === 'GOL') return false;
+        const outName = d.fullName;
+        d.uid = p.uid; d.name = shortName(p.name); d.fullName = p.name;
+        d.ovr = slotEffectiveOvr(p, d.role); d.stam = 100; d.eff = d.ovr; d.yel = 0;
+        bench.used = true;
+        m.subs[side]++;
+        this.logEvent(m, { t: 'sub', side, out: outName, outUid, in: p.name, inUid: p.uid });
+        if (!silent) {
+          const tk = document.getElementById('match-ticker-text');
+          if (tk) tk.textContent = 'Substituição: sai ' + outName + ', entra ' + p.name + '.';
+        }
+        return true;
+      },
+
+      refreshProfiles(home, away) {
+        const mk = (side) => this.discs.filter(d => d.side === side).map(d => ({ role: d.role, eff: d.eff || d.ovr }));
+        const uH = unitsFromList(mk('H'), home.formation || '4-3-3');
+        const uA = unitsFromList(mk('A'), away.formation || '4-3-3');
+        const pH = buildTacProfile(home), pA = buildTacProfile(away);
+        this.units = { H: uH, A: uA };
+        this.profs = { H: pH, A: pA };
+        this.edges = { H: tacMatchupEdge(pH, pA, uH, uA), A: tacMatchupEdge(pA, pH, uA, uH) };
+        this.profDirty = false;
+      },
+
+      // Bots escolhem um plano no início e ajustam ao longo do jogo
+      aiPlan(mgr, opp) {
+        if (!mgr || mgr.kind === 'HUMAN') return;
+        const u = unitsFromLineup(mgr), uo = unitsFromLineup(opp);
+        const diff = (u.atk + u.mid + u.def) / 3 - (uo.atk + uo.mid + uo.def) / 3;
+        let style = 'BALANCED';
+        if (diff < -3) style = 'COUNTER';
+        else if (u.mid - uo.mid > 3) style = 'POSSESSION';
+        else if (u.atk - uo.def > 4) style = this.rand() < 0.5 ? 'WINGS' : 'SHOOT';
+        else if (u.mid < uo.mid - 3) style = 'LONG';
+        mgr.style = style;
+        mgr.stance = diff > 3 ? 'ATTACK' : (diff < -4 ? 'DEFENSIVE' : 'BALANCED');
+        mgr.press = diff > 2 ? 'HIGH' : (diff < -3 ? 'LOW' : 'MID');
+      },
+
+      aiAdjust(m, mgr, side, silent) {
+        if (!mgr || mgr.kind === 'HUMAN') return;
+        const min = this.curMin();
+        const diff = side === 'H' ? (m.homeGoals - m.awayGoals) : (m.awayGoals - m.homeGoals);
+        if (min >= 55 && diff < 0) { mgr.stance = 'ATTACK'; mgr.press = min < 80 ? 'HIGH' : 'MID'; if (min >= 75) mgr.style = 'LONG'; }
+        else if (min >= 70 && diff > 0) { mgr.stance = 'DEFENSIVE'; mgr.press = 'LOW'; if (mgr.style === 'SHOOT' || mgr.style === 'WINGS') mgr.style = 'COUNTER'; }
+        if (!m.subs) m.subs = { H: 0, A: 0 };
+        if (this.ticks > this.maxTicks * 0.55 && m.subs[side] < MAX_SUBS && m.sheet && m.sheet[side]) {
+          const tired = this.discs.filter(d => d.side === side && d.role !== 'GOL' && d.stam < 66).sort((a, b) => a.stam - b.stam)[0];
+          if (tired) {
+            let best = null, bestV = -1;
+            m.sheet[side].bench.forEach(b => {
+              if (b.used || b.pos === 'GOL') return;
+              const p = mgr.roster.find(x => x.uid === b.uid);
+              const v = slotEffectiveOvr(p, tired.role);
+              if (v > bestV) { bestV = v; best = b; }
+            });
+            if (best && bestV >= tired.eff - 1) this.doSub(m, mgr, tired.uid, best.uid, silent);
+          }
+        }
+        this.profDirty = true;
       },
 
       addImpact(x, y, color) {
@@ -3622,10 +4255,11 @@
 
         hF.forEach((sl, idx) => {
           const p = home.roster.find(x => x.uid === home.lineupIds[idx]) || home.roster[idx];
+          const ov = slotEffectiveOvr(p, sl.role);
           this.discs.push({
             side: 'H', role: sl.role, uid: p ? p.uid : 'h' + idx,
             name: p ? shortName(p.name) : 'Jog', fullName: p ? p.name : 'Jogador',
-            ovr: slotEffectiveOvr(p, sl.role), clubId: hClub.id, clubShort: hClub.short, color: hClub.kitBg,
+            ovr: ov, eff: ov, stam: 100, yel: 0, clubId: hClub.id, clubShort: hClub.short, color: hClub.kitBg,
             ax: sl.x, ay: sl.y, x: sl.x * 0.72, y: sl.y
           });
         });
@@ -3633,13 +4267,31 @@
         aF.forEach((sl, idx) => {
           const p = away.roster.find(x => x.uid === away.lineupIds[idx]) || away.roster[idx];
           const ax = 1 - sl.x, ay = 1 - sl.y;
+          const ov = slotEffectiveOvr(p, sl.role);
           this.discs.push({
             side: 'A', role: sl.role, uid: p ? p.uid : 'a' + idx,
             name: p ? shortName(p.name) : 'Jog', fullName: p ? p.name : 'Jogador',
-            ovr: slotEffectiveOvr(p, sl.role), clubId: aClub.id, clubShort: aClub.short, color: aClub.kitBg,
+            ovr: ov, eff: ov, stam: 100, yel: 0, clubId: aClub.id, clubShort: aClub.short, color: aClub.kitBg,
             ax, ay, x: 1 - sl.x * 0.72, y: ay
           });
         });
+
+        // Súmula: titulares e banco de cada lado (usada na tela de partida e nas substituições)
+        if (!m.sheet) {
+          const mkSide = (mgr, F) => {
+            const xi = F.map((sl, idx) => {
+              const p = mgr.roster.find(x => x.uid === mgr.lineupIds[idx]) || mgr.roster[idx];
+              return { uid: p ? p.uid : 'x' + idx, name: p ? shortName(p.name) : 'Jog', full: p ? p.name : 'Jogador', role: sl.role, num: idx + 1 };
+            });
+            const used = new Set(xi.map(x => x.uid));
+            const bench = mgr.roster.filter(p => !used.has(p.uid)).sort((a, b) => b.ovr - a.ovr)
+              .map((p, i) => ({ uid: p.uid, name: shortName(p.name), full: p.name, pos: p.pos, ovr: p.ovr, num: 12 + i, used: false }));
+            return { xi, bench };
+          };
+          m.sheet = { H: mkSide(home, hF), A: mkSide(away, aF) };
+        }
+        this.cnt = { H: 0, A: 0 };
+        this.refreshProfiles(home, away);
 
         this.resetKickoff('H');
         this.draw();
@@ -3659,7 +4311,15 @@
       },
 
       startLive(m) {
+        m.sheet = null; m.events = []; m.subs = { H: 0, A: 0 };
+        m.stats = { possH: 0, possA: 0, shotsH: 0, shotsA: 0, onTgtH: 0, onTgtA: 0, tacklesH: 0, tacklesA: 0, foulsH: 0, foulsA: 0 };
         this.loadMatch(m);
+        const hM = room && room.managers.find(x => x.id === m.homeId);
+        const aM = room && room.managers.find(x => x.id === m.awayId);
+        if (hM && aM) {
+          this.aiPlan(hM, aM); this.aiPlan(aM, hM);
+          this.refreshProfiles(hM, aM);
+        }
         this.running = true;
         AudioEngine.whistle();
         const ticker = document.getElementById('match-ticker-text');
@@ -3705,24 +4365,8 @@
         render();
       },
 
-      getTacticalProfile(mgr) {
-        const st = (mgr && mgr.stance) || 'BALANCED';
-        const fmt = (mgr && mgr.formation) || '4-3-3';
-        // Postura tática impacta de verdade: linha de marcação, pressão, finalização e proteção defensiva
-        let lineShift = st === 'ATTACK' ? 0.032 : (st === 'DEFENSIVE' ? -0.028 : 0.0);
-        let shotBias = st === 'ATTACK' ? 0.11 : (st === 'DEFENSIVE' ? -0.12 : 0.0);
-        let defCover = st === 'DEFENSIVE' ? 0.08 : (st === 'ATTACK' ? -0.06 : 0.0);
-        let pressCount = 1;
-        let passRisk = st === 'ATTACK' ? 1.18 : (st === 'DEFENSIVE' ? 0.85 : 1.0);
-
-        // Formação modifica controle de meio, força ofensiva e solidez defensiva
-        if (fmt === '4-4-2') { defCover += 0.03; shotBias += 0.02; }
-        else if (fmt === '3-5-2') { passRisk += 0.12; lineShift += 0.02; shotBias += 0.03; defCover -= 0.02; }
-        else if (fmt === '4-2-4') { lineShift += 0.015; shotBias += 0.07; defCover -= 0.03; }
-        return { st, fmt, lineShift, shotBias, defCover, pressCount, passRisk };
-      },
-
       step(m, silent) {
+        this.curMatch = m;
         if (this.pauseFrames > 0) {
           this.pauseFrames--;
           if (this.pauseFrames === 0) {
@@ -3734,14 +4378,11 @@
 
         this.ticks++;
         if (this.stanceQueue.length) {
-          for (let qi = this.stanceQueue.length - 1; qi >= 0; qi--) {
-            const q = this.stanceQueue[qi];
-            if (this.ticks >= q.applyTick) {
-              const targetMgr = room && room.managers.find(x => x.id === q.clientId);
-              if (targetMgr) targetMgr.stance = q.stance;
-              this.stanceQueue.splice(qi, 1);
-              if (!silent && Client.screen === 'tourney') renderTourney();
-            }
+          const due = this.stanceQueue.filter(q => this.ticks >= q.applyTick).sort((x, y) => x.applyTick - y.applyTick);
+          if (due.length) {
+            this.stanceQueue = this.stanceQueue.filter(q => this.ticks < q.applyTick);
+            due.forEach(q => this.applyTac(m, q, silent));
+            if (!silent && Client.screen === 'tourney') renderTourney();
           }
         }
         if (this.shakeFrames > 0) this.shakeFrames--;
@@ -3756,8 +4397,30 @@
 
         const home = room.managers.find(x => x.id === m.homeId);
         const away = room.managers.find(x => x.id === m.awayId);
-        const hTac = this.getTacticalProfile(home);
-        const aTac = this.getTacticalProfile(away);
+        // Bots ajustam a tática a cada ~5 minutos de jogo
+        if (this.ticks % 140 === 0) {
+          this.aiAdjust(m, home, 'H', silent);
+          this.aiAdjust(m, away, 'A', silent);
+        }
+        // Cansaço: pressão alta e postura ofensiva gastam mais fôlego; o rendimento cai com a energia
+        if (!this.profs || this.profDirty || this.ticks % 20 === 0) this.refreshProfiles(home, away);
+        const hTac = this.profs.H, aTac = this.profs.A;
+        {
+          const cH = new Set(), cA = new Set();
+          this.discs.forEach((d, i) => {
+            if (d.role === 'GOL') return;
+            const tac = d.side === 'H' ? hTac : aTac;
+            const near = dist2(d.x - b.x, d.y - b.y) < 0.14 ? 1.35 : 1;
+            d.stam = Math.max(10, d.stam - 0.0165 * tac.fatigue * near);
+            d.eff = d.ovr * (0.78 + 0.22 * d.stam / 100);
+          });
+        }
+        if (this.cnt.H > 0) this.cnt.H--;
+        if (this.cnt.A > 0) this.cnt.A--;
+        if (m.stats && b.lastTouchIdx >= 0 && this.discs[b.lastTouchIdx]) {
+          if (this.discs[b.lastTouchIdx].side === 'H') m.stats.possH++;
+          else m.stats.possA++;
+        }
 
         // Closest 1 or 2 pressers per side (ATTACK presses with 2, DEFENSIVE holds compact block)
         const hCands = [], aCands = [];
@@ -3775,7 +4438,7 @@
 
         this.discs.forEach((d, idx) => {
           const tac = d.side === 'H' ? hTac : aTac;
-          const spd = (0.0020 + (d.ovr - 75) * 0.000052) * (tac.st === 'ATTACK' ? 1.05 : 1.0);
+          const spd = (0.0020 + ((d.eff || d.ovr) - 75) * 0.000052) * (tac.st === 'ATTACK' ? 1.05 : 1.0);
           if (d.role === 'GOL') {
             const tx = d.side === 'H' ? 0.044 : 0.956;
             const ty = Math.max(0.39, Math.min(0.61, b.y * 0.72 + 0.5 * 0.28));
@@ -3815,10 +4478,12 @@
         }
 
         if (b.cooldown === 0) {
+          const fastShot = b.isShot && dist2(b.vx, b.vy) > 0.011;
           let bestIdx = -1, bestDist = 999;
           for (let i = 0; i < this.discs.length; i++) {
             const d = this.discs[i];
-            const reach = d.role === 'GOL' ? 0.040 : 0.029;
+            if (fastShot && d.role !== 'GOL') continue;
+            const reach = d.role === 'GOL' ? 0.042 : 0.029;
             const dd = dist2(b.x - d.x, b.y - d.y);
             if (dd < reach && dd < bestDist) {
               bestDist = dd;
@@ -3832,8 +4497,9 @@
 
         b.x += b.vx; b.y += b.vy;
         b.vx *= 0.985; b.vy *= 0.985;
-        if (b.y < 0.05) { b.y = 0.05; b.vy = Math.abs(b.vy) * 0.78; }
-        if (b.y > 0.95) { b.y = 0.95; b.vy = -Math.abs(b.vy) * 0.78; }
+        if (b.isShot && dist2(b.vx, b.vy) <= 0.011) b.isShot = false;
+        if (b.y < 0.05) { b.y = 0.05; b.vy = Math.abs(b.vy) * 0.78; b.isShot = false; }
+        if (b.y > 0.95) { b.y = 0.95; b.vy = -Math.abs(b.vy) * 0.78; b.isShot = false; }
 
         // Realistic goal mouth (20% of pitch height) + crossbar/post rebounds
         const inGoal = b.y > 0.40 && b.y < 0.60;
@@ -3847,7 +4513,7 @@
             const tk = document.getElementById('match-ticker-text');
             if (tk) tk.textContent = 'Bola na trave!';
           }
-          b.x = 0.038; b.vx = Math.abs(b.vx) * 0.72 + 0.005;
+          b.x = 0.038; b.vx = Math.abs(b.vx) * 0.72 + 0.005; b.isShot = false;
         } else if (b.x > 0.968) {
           if (inGoal) { this.scoreGoal(m, 'H', silent); return true; }
           if (hitPost && !silent) {
@@ -3857,7 +4523,7 @@
             const tk = document.getElementById('match-ticker-text');
             if (tk) tk.textContent = 'Bola na trave!';
           }
-          b.x = 0.962; b.vx = -Math.abs(b.vx) * 0.72 - 0.005;
+          b.x = 0.962; b.vx = -Math.abs(b.vx) * 0.72 - 0.005; b.isShot = false;
         }
 
         if (this.trail && this.trail.ttl > 0) this.trail.ttl--;
@@ -3872,57 +4538,99 @@
       touchBall(d, idx, silent, home, away) {
         const b = this.ball;
         const attRight = d.side === 'H';
-        const myTac = this.getTacticalProfile(attRight ? home : away);
-        const oppTac = this.getTacticalProfile(attRight ? away : home);
+        const sd = d.side, od = sd === 'H' ? 'A' : 'H';
+        const myTac = this.profs[sd], oppTac = this.profs[od];
+        const edge = this.edges[sd];
         const gx = attRight ? 0.98 : 0.02;
         const distG = Math.abs(gx - d.x);
-        const skill = (d.ovr - 75) / 16;
+        const eff = d.eff || d.ovr;
+        const skill = (eff - 75) / 16;
+        const say = (txt) => { if (silent) return; const tk = document.getElementById('match-ticker-text'); if (tk) tk.textContent = txt; };
 
         if (d.role === 'GOL') {
           const shotSpd = dist2(b.vx, b.vy);
-          // Realistic goalkeeper shot-stopping + defensive posture cover
-          const saveProb = Math.min(0.88, Math.max(0.36, 0.70 + skill * 0.16 + myTac.defCover * 0.45 - shotSpd * 7.8));
+          const oppEdge = this.edges[od];
+          // Defesa do goleiro + cobertura da postura - vantagem ofensiva tática adversária
+          const saveProb = Math.min(0.88, Math.max(0.30, 0.72 + skill * 0.16 + myTac.defCover * 0.25 - oppEdge.atk * 0.35 - shotSpd * 7.8));
           if (shotSpd > 0.013 && this.rand() > saveProb) {
             b.cooldown = 12;
             return;
           }
+          b.isShot = false;
           b.vx = attRight ? 0.015 : -0.015;
           b.vy = (this.rand() - 0.5) * 0.016;
           b.cooldown = 16;
           if (!silent) {
             this.addImpact(b.x, b.y, '#FFFFFF');
             AudioEngine.clack();
-            const tk = document.getElementById('match-ticker-text');
-            if (tk) tk.textContent = 'Defesa de ' + d.fullName + '!';
+            say('Defesa de ' + d.fullName + '!');
           }
           return;
         }
 
-        b.lastTouchIdx = idx;
+        // 1) Duelo / pressão: o adversário mais próximo tenta tomar a bola
+        let near = null, nearIdx = -1, nearDist = 999;
+        for (let i = 0; i < this.discs.length; i++) {
+          const o = this.discs[i];
+          if (o.side === sd || o.role === 'GOL') continue;
+          const dd = dist2(o.x - d.x, o.y - d.y);
+          if (dd < nearDist) { nearDist = dd; near = o; nearIdx = i; }
+        }
+        const pressRange = 0.065 + oppTac.pressCount * 0.014;
+        if (near && nearDist < pressRange) {
+          let pDis = 0.07 + oppTac.winBall + myTac.turnover - edge.ball * 0.6 + ((near.eff || near.ovr) - eff) / 220;
+          pDis = Math.max(0.02, Math.min(0.42, pDis));
+          if (this.rand() < pDis) {
+            if (oppTac.press === 'HIGH' && near.yel === 0 && this.rand() < 0.07) {
+              // Falta dura na marcação alta: cartão amarelo e bola fica com quem sofreu a falta
+              near.yel = 1;
+              if (this.curMatch && this.curMatch.stats) this.curMatch.stats[od === 'H' ? 'foulsH' : 'foulsA']++;
+              this.logEvent(this.curMatch, { t: 'yellow', side: od, name: near.fullName, uid: near.uid });
+              b.lastTouchIdx = idx;
+              b.vx = (attRight ? 1 : -1) * 0.006; b.vy = (this.rand() - 0.5) * 0.004; b.cooldown = 18;
+              if (!silent) { this.addImpact(b.x, b.y, '#FACC15'); AudioEngine.clack(); }
+              say('Falta de ' + near.fullName + '! Cartão amarelo.');
+              return;
+            }
+            if (this.curMatch && this.curMatch.stats) this.curMatch.stats[od === 'H' ? 'tacklesH' : 'tacklesA']++;
+            b.lastTouchIdx = nearIdx;
+            b.vx = (od === 'H' ? 1 : -1) * 0.004; b.vy = (this.rand() - 0.5) * 0.004; b.cooldown = 12;
+            if (oppTac.counterBias) this.cnt[od] = 120;
+            if (!silent) { AudioEngine.clack(); if (this.rand() < 0.5) say('Desarme de ' + near.fullName + '!'); }
+            return;
+          }
+        }
 
-        // Realistic shooting zone & probability shaped by tactical stance and opponent's defensive block
-        const shotRange = 0.34 + myTac.shotBias * 0.08;
-        const baseShotChance = (d.role === 'ATA' ? 0.56 : (d.role === 'MEI' ? 0.32 : 0.14)) + myTac.shotBias * 0.45 - oppTac.defCover * 0.35;
-        if (distG < shotRange && this.rand() < Math.max(0.06, baseShotChance)) {
-          // Check if an opponent defender is directly blocking the shot lane
+        b.lastTouchIdx = idx;
+        const counter = this.cnt[sd] > 0;
+        const atkBias = myTac.shotBias + edge.atk;
+
+        // 2) Finalização
+        const shotRange = (0.34 + atkBias * 0.06) * myTac.shotRangeMul + (counter ? 0.08 : 0);
+        const wideNow = Math.abs(d.y - 0.5) > 0.28;
+        const baseShotChance = (d.role === 'ATA' ? 0.56 : (d.role === 'MEI' ? 0.32 : 0.14))
+          + atkBias * 0.45 - oppTac.defCover * 0.30 + (counter ? 0.16 : 0);
+        if (distG < shotRange && this.rand() < Math.max(0.10, baseShotChance)) {
           const blockers = this.discs.filter(o => o.side !== d.side && o.role !== 'GOL' && dist2(o.x - d.x, o.y - d.y) < 0.075);
-          if (blockers.length > 0 && this.rand() < (0.36 + oppTac.defCover * 0.9)) {
+          const blockP = 0.34 + oppTac.defCover * 0.65 + (oppTac.press === 'LOW' ? 0.05 : 0) - (counter ? 0.14 : 0) - (myTac.style === 'SHOOT' ? 0.15 : 0);
+          if (blockers.length > 0 && this.rand() < blockP) {
+            if (this.curMatch && this.curMatch.stats) this.curMatch.stats[od === 'H' ? 'tacklesH' : 'tacklesA']++;
             b.vx = (attRight ? -1 : 1) * 0.011;
             b.vy = (this.rand() - 0.5) * 0.014;
             b.cooldown = 14;
-            if (!silent) {
-              this.addImpact(b.x, b.y, '#FFFFFF');
-              AudioEngine.clack();
-              const tk = document.getElementById('match-ticker-text');
-              if (tk) tk.textContent = 'Travado por ' + blockers[0].fullName + '!';
-            }
+            if (!silent) { this.addImpact(b.x, b.y, '#FFFFFF'); AudioEngine.clack(); say('Travado por ' + blockers[0].fullName + '!'); }
             return;
           }
 
-          // Realistic shot aim (some shots go wide of the 0.40..0.60 goal!)
-          const onTargetProb = Math.min(0.86, Math.max(0.42, 0.60 + skill * 0.22 + myTac.shotBias * 0.18 - oppTac.defCover * 0.24));
+          // Mira: parte dos chutes sai pela linha de fundo
+          const onTargetProb = Math.min(0.90, Math.max(0.30, (0.60 + skill * 0.22 + myTac.shotBias * 0.18 + edge.acc - oppTac.defCover * 0.22) * myTac.accMul));
+          const onTgt = this.rand() < onTargetProb;
+          if (this.curMatch && this.curMatch.stats) {
+            this.curMatch.stats[sd === 'H' ? 'shotsH' : 'shotsA']++;
+            if (onTgt) this.curMatch.stats[sd === 'H' ? 'onTgtH' : 'onTgtA']++;
+          }
           let aimY;
-          if (this.rand() < onTargetProb) {
+          if (onTgt) {
             aimY = 0.415 + this.rand() * 0.17;
           } else {
             aimY = this.rand() < 0.5 ? (0.28 + this.rand() * 0.11) : (0.61 + this.rand() * 0.11);
@@ -3931,33 +4639,68 @@
           const len = dist2(dx, dy) || 1;
           const pwr = 0.0195 + skill * 0.0065;
           b.vx = (dx / len) * pwr; b.vy = (dy / len) * pwr;
+          b.isShot = true;
           b.cooldown = 15;
           this.trail = { x1: b.x, y1: b.y, x2: gx, y2: aimY, ttl: 14, shot: true };
           if (!silent) {
             this.addImpact(b.x, b.y, '#F6C945');
             this.shakeFrames = 5;
             AudioEngine.kick();
-            const tk = document.getElementById('match-ticker-text');
-            if (tk) tk.textContent = d.fullName + ' arrisca o chute!';
+            say(d.fullName + (distG > 0.26 ? ' arrisca de longe!' : ' finaliza!'));
           }
           return;
         }
 
-        // Passing & tactical build-up (DEFENSIVE launches longer counters; ATTACK triangulates fast forward)
+        // 3) Construção: o estilo define alcance, destino e risco do passe
         const mates = this.discs.filter((mDisc, mIdx) => mDisc.side === d.side && mIdx !== idx && mDisc.role !== 'GOL');
+        const longBall = myTac.style === 'LONG';
+        const maxD = longBall ? 0.72 : (myTac.shortPass ? 0.30 : (myTac.st === 'ATTACK' ? 0.48 : 0.42));
+        const minD = longBall ? 0.22 : 0.07;
         let best = null, bestSc = -999;
         mates.forEach(mt => {
           const gain = attRight ? (mt.x - d.x) : (d.x - mt.x);
           const dist = dist2(mt.x - d.x, mt.y - d.y);
-          if (dist < 0.07 || dist > (myTac.st === 'ATTACK' ? 0.48 : 0.42)) return;
-          const sc = gain * (2.0 * myTac.passRisk) - Math.abs(mt.y - 0.5) * 0.22 + this.rand() * 0.22;
+          if (dist < minD || dist > maxD) return;
+          const central = Math.abs(mt.y - 0.5) < 0.2;
+          let sc;
+          if (myTac.shortPass) sc = gain * 1.2 + (0.30 - dist) * 0.8 + this.rand() * 0.25;
+          else sc = gain * (2.0 * myTac.passRisk) + this.rand() * 0.22;
+          if (myTac.wideBias) {
+            if (wideNow && central && distG < 0.42 && gain > -0.05) sc += 0.95; // cruzamento letal para a área
+            else if (gain > 0.02) sc += Math.abs(mt.y - 0.5) * 0.42; // só abre pelas pontas avançando
+          } else {
+            sc -= Math.abs(mt.y - 0.5) * 0.22;
+          }
+          if (counter) sc += gain * 1.4;
           if (sc > bestSc) { bestSc = sc; best = mt; }
         });
 
         if (best && (bestSc > 0.01 || d.role === 'ZAG' || this.rand() < 0.72)) {
+          // Erro de passe: bola longa fura pressão alta; toque de bola sofre na pressão alta
+          const pressPen = oppTac.press === 'HIGH' ? (longBall ? -0.03 : 0.06) : 0;
+          let fail = 0.04 + myTac.turnover + pressPen + (myTac.shortPass && oppTac.press === 'HIGH' ? 0.09 : 0) - (myTac.shortPass ? 0.03 : 0) - edge.ball * 0.42 + (longBall ? 0.04 : 0);
+          fail = Math.max(0.01, Math.min(0.36, fail));
+          if (this.rand() < fail) {
+            let tgt = null, td = 999;
+            this.discs.forEach(o => {
+              if (o.side === sd || o.role === 'GOL') return;
+              const dd = dist2(o.x - best.x, o.y - best.y);
+              if (dd < td) { td = dd; tgt = o; }
+            });
+            if (tgt) {
+              const dx = tgt.x - b.x, dy = tgt.y - b.y, ln = dist2(dx, dy) || 1;
+              b.vx = (dx / ln) * 0.011; b.vy = (dy / ln) * 0.011;
+              b.cooldown = 13;
+              this.trail = { x1: b.x, y1: b.y, x2: tgt.x, y2: tgt.y, ttl: 10, shot: false };
+              if (oppTac.counterBias && this.rand() < 0.5) this.cnt[od] = 110;
+              if (!silent) { AudioEngine.clack(); if (this.rand() < 0.3) say('Passe errado de ' + d.fullName + '.'); }
+              return;
+            }
+          }
+          if (longBall && oppTac.press === 'HIGH' && dist2(best.x - d.x, best.y - d.y) > 0.28) this.cnt[sd] = 90;
           const dx = best.x - b.x, dy = best.y - b.y;
           const len = dist2(dx, dy) || 1;
-          const ps = Math.min(0.0185, 0.0105 + Math.min(0.48, len) * 0.018);
+          const ps = Math.min(longBall ? 0.021 : 0.0185, 0.0105 + Math.min(0.72, len) * 0.018);
           b.vx = (dx / len) * ps; b.vy = (dy / len) * ps;
           b.cooldown = 13;
           this.trail = { x1: b.x, y1: b.y, x2: best.x, y2: best.y, ttl: 10, shot: false };
@@ -3980,6 +4723,8 @@
           scorer = cands[Math.floor(this.rand() * cands.length)] || this.discs[0];
         }
         const tag = scorer.name + " " + min + "'";
+        this.logEvent(m, { t: 'goal', side, name: scorer.fullName, uid: scorer.uid });
+        this.cnt = { H: 0, A: 0 };
         const mgr = side === 'H' ? home : away;
 
         if (side === 'H') { m.homeGoals++; m.homeScorers.push(tag); }
@@ -3991,7 +4736,7 @@
         room.tourney.scorers[scorer.uid].goals++;
 
         if (!silent) {
-          this.addImpact(b.x, b.y, '#F6C945');
+          this.addImpact(this.ball.x, this.ball.y, '#F6C945');
           this.shakeFrames = 14;
           AudioEngine.goal();
           const ov = document.getElementById('goal-overlay');
@@ -4063,21 +4808,34 @@
 
         const stripes = 12, sw = w / stripes;
         for (let i = 0; i < stripes; i++) {
-          ctx.fillStyle = i % 2 === 0 ? '#1B7340' : '#208048';
+          ctx.fillStyle = i % 2 === 0 ? '#156137' : '#1A7040';
           ctx.fillRect(i * sw, 0, sw + 1, h);
         }
+        // Iluminação de estádio (vinheta suave nas bordas)
+        const vig = ctx.createRadialGradient(w * 0.5, h * 0.5, Math.min(w, h) * 0.25, w * 0.5, h * 0.5, Math.max(w, h) * 0.72);
+        vig.addColorStop(0, 'rgba(255,255,255,0.04)');
+        vig.addColorStop(1, 'rgba(0,0,0,0.28)');
+        ctx.fillStyle = vig;
+        ctx.fillRect(0, 0, w, h);
 
         const px = w * 0.032, py = h * 0.05;
         const pw = w - px * 2, ph = h - py * 2;
-        ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.72)';
         ctx.lineWidth = 1.6;
         ctx.strokeRect(px, py, pw, ph);
         ctx.beginPath(); ctx.moveTo(w / 2, py); ctx.lineTo(w / 2, h - py); ctx.stroke();
         ctx.beginPath(); ctx.arc(w / 2, h / 2, Math.min(w, h) * 0.14, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(w / 2, h / 2, 2.5, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
 
         const penW = pw * 0.14, penH = ph * 0.54;
+        const sixW = pw * 0.055, sixH = ph * 0.26;
         ctx.strokeRect(px, (h - penH) / 2, penW, penH);
         ctx.strokeRect(w - px - penW, (h - penH) / 2, penW, penH);
+        ctx.strokeRect(px, (h - sixH) / 2, sixW, sixH);
+        ctx.strokeRect(w - px - sixW, (h - sixH) / 2, sixW, sixH);
+        // Meia-lua das áreas
+        ctx.beginPath(); ctx.arc(px + penW * 0.72, h / 2, Math.min(w, h) * 0.11, -0.74, 0.74); ctx.stroke();
+        ctx.beginPath(); ctx.arc(w - px - penW * 0.72, h / 2, Math.min(w, h) * 0.11, Math.PI - 0.74, Math.PI + 0.74); ctx.stroke();
 
         const gTop = h * 0.40, gH = h * 0.20;
         ctx.fillStyle = 'rgba(255,255,255,0.18)';
@@ -4141,12 +4899,21 @@
           ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.stroke();
           ctx.fillStyle = '#F6C945';
           ctx.font = '800 ' + Math.max(7, Math.round(rad * 0.48)) + 'px "Plus Jakarta Sans", sans-serif';
-          ctx.fillText(String(d.ovr), bx, by + 0.5);
+          ctx.fillText(String(Math.round(d.eff || d.ovr)), bx, by + 0.5);
 
           // Player name label
           ctx.font = '600 10px "Plus Jakarta Sans", sans-serif';
           ctx.fillStyle = 'rgba(255,255,255,0.94)';
           ctx.fillText(d.name, cx, cy + rad + 9.5);
+
+          // Barra de energia (verde → amarelo → vermelho) e cartão amarelo
+          if (d.role !== 'GOL' && typeof d.stam === 'number') {
+            const bw = rad * 1.6, bh = 3, bx0 = cx - bw / 2, by0 = cy + rad + 14.5;
+            ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(bx0, by0, bw, bh);
+            ctx.fillStyle = d.stam > 66 ? '#22C55E' : (d.stam > 40 ? '#EAB308' : '#EF4444');
+            ctx.fillRect(bx0, by0, bw * Math.max(0.05, d.stam / 100), bh);
+          }
+          if (d.yel) { ctx.fillStyle = '#FACC15'; ctx.fillRect(cx - rad - 3, cy - rad * 0.9, 5, 7); }
         });
 
         if (this.impacts && this.impacts.length) {
@@ -4616,7 +5383,7 @@
 
       // Left: My Personal Team Only
       const myClubObj = getClubObj(me.clubId, room.rules.universe);
-      document.getElementById('my-team-crest').innerHTML = uniqueClubSvg(myClubObj.svg);
+      document.getElementById('my-team-crest').innerHTML = crestHtml(myClubObj);
       document.getElementById('my-team-heading').textContent = me.name + ' • ' + myClubObj.name;
       document.getElementById('my-team-ovr-badge').textContent = 'Titular ' + teamAvgOvr(me);
       document.getElementById('my-formation-select').value = me.formation || '4-3-3';
@@ -4821,11 +5588,12 @@
       const aClub = getClubObj(away.clubId, univ);
       document.getElementById('arena-round-tag').textContent = m.stageName;
       document.getElementById('arena-names-heading').textContent = home.name + ' (' + hClub.name + ') x ' + away.name + ' (' + aClub.name + ')';
-      const stShort = { DEFENSIVE: 'Retranca', BALANCED: 'Equilibrado', ATTACK: 'Ofensivo' };
-      document.getElementById('sb-home-label').textContent = home.name + ' (' + (home.formation || '4-3-3') + ' • ' + (stShort[home.stance] || 'Equilibrado') + ')';
-      document.getElementById('sb-away-label').textContent = away.name + ' (' + (away.formation || '4-3-3') + ' • ' + (stShort[away.stance] || 'Equilibrado') + ')';
-      document.getElementById('sb-home-crest').innerHTML = uniqueClubSvg(hClub.svg);
-      document.getElementById('sb-away-crest').innerHTML = uniqueClubSvg(aClub.svg);
+      const stShort = TAC_STANCES;
+      const styShort = TAC_STYLES;
+      document.getElementById('sb-home-label').textContent = home.name + ' (' + (home.formation || '4-3-3') + ' • ' + (stShort[home.stance] || 'Equilibrado') + ' • ' + (styShort[home.style] || 'Equilibrado') + ')';
+      document.getElementById('sb-away-label').textContent = away.name + ' (' + (away.formation || '4-3-3') + ' • ' + (stShort[away.stance] || 'Equilibrado') + ' • ' + (styShort[away.style] || 'Equilibrado') + ')';
+      document.getElementById('sb-home-crest').innerHTML = crestHtml(hClub);
+      document.getElementById('sb-away-crest').innerHTML = crestHtml(aClub);
       document.getElementById('sb-home-goals-list').textContent = (m.homeScorers || []).join(', ');
       document.getElementById('sb-away-goals-list').textContent = (m.awayScorers || []).join(', ');
 
@@ -4839,6 +5607,352 @@
       const hostObj = room.managers.find(x => x.id === room.hostId);
       const canFast = amIHost() || (hostObj && hostObj.kind === 'PEER');
       fastBtn.classList.toggle('hidden', !(canFast && MatchEngine.running && !m.played));
+
+      updateTacHud(m);
+      renderMatchStats(m);
+      applyArenaView();
+      renderMatchSheet(m, false);
+    }
+
+    function applyArenaView() {
+      const mode = Client.ui.arenaView || 'HYBRID';
+      ['HYBRID', 'FIFA', 'PITCH'].forEach(v => {
+        const b = document.getElementById('aview-' + v);
+        if (b) b.classList.toggle('active', mode === v);
+      });
+      const pitchWrap = document.getElementById('pitch-canvas-wrap');
+      const sheetEl = document.getElementById('match-sheet');
+      if (pitchWrap) pitchWrap.classList.toggle('hidden', mode === 'FIFA');
+      if (sheetEl) {
+        const m = activeTourneyMatch();
+        const hasSheet = !!(m && m.sheet);
+        sheetEl.classList.toggle('hidden', !hasSheet || mode === 'PITCH');
+      }
+    }
+
+    function renderMatchStats(m) {
+      const el = document.getElementById('sb-stats-strip');
+      if (!el) return;
+      if (!m || !m.stats) { el.classList.add('hidden'); return; }
+      const st = m.stats;
+      const totP = (st.possH + st.possA) || 1;
+      const pH = Math.round((st.possH / totP) * 100), pA = 100 - pH;
+      const bar = (lbl, vh, va, txtH, txtA) => {
+        const tot = (vh + va) || 1;
+        const wH = Math.round((vh / tot) * 100);
+        return `<div class="stat-mini">
+          <div class="stat-mini-top"><span style="color:#6EE7B7;">${txtH}</span><span class="stat-mini-lbl">${lbl}</span><span style="color:#FDE047;">${txtA}</span></div>
+          <div class="stat-bar"><div class="bh" style="width:${wH}%"></div><div class="ba" style="width:${100 - wH}%"></div></div>
+        </div>`;
+      };
+      const E = MatchEngine;
+      const hDiscs = E.matchId === m.id ? E.discs.filter(d => d.side === 'H' && d.role !== 'GOL') : [];
+      const aDiscs = E.matchId === m.id ? E.discs.filter(d => d.side === 'A' && d.role !== 'GOL') : [];
+      const eH = hDiscs.length ? Math.round(hDiscs.reduce((s, d) => s + (d.stam || 100), 0) / hDiscs.length) : 100;
+      const eA = aDiscs.length ? Math.round(aDiscs.reduce((s, d) => s + (d.stam || 100), 0) / aDiscs.length) : 100;
+      el.classList.remove('hidden');
+      el.innerHTML =
+        bar('Posse de bola', pH, pA, pH + '%', pA + '%') +
+        bar('Finalizações', st.shotsH, st.shotsA, st.shotsH + ' (' + st.onTgtH + ')', st.shotsA + ' (' + st.onTgtA + ')') +
+        bar('Desarmes', st.tacklesH, st.tacklesA, String(st.tacklesH), String(st.tacklesA)) +
+        bar('Energia média', eH, eA, eH + '%', eA + '%');
+    }
+
+    // ---------- Táticas: pedidos, botões, substituições, vestiário e súmula ----------
+    const SubUI = { out: null, in: null };
+    const TourneyLineupUI = { pickUid: null };
+
+    function activeTourneyMatch() {
+      return room && room.tourney ? (room.tourney.matches.find(x => x.id === room.tourney.activeMatchId) || room.tourney.matches.find(x => !x.isBye)) : null;
+    }
+
+    function requestTac(tac) {
+      const me = myMgr();
+      if (!me || !room) return;
+      tac = sanitizeTac(tac);
+      if (!Object.keys(tac).length) return;
+      if (OnlineNet.isRemoteGuest()) {
+        OnlineNet.sendGuestAction('SET_STANCE', { tac });
+        if (!tac.sub) toast('Tática enviada ao host.');
+      } else if (MatchEngine.running) {
+        const applyTick = MatchEngine.ticks + 18;
+        MatchEngine.enqueueTac(me.id, tac, applyTick);
+        OnlineNet.broadcastFromHost({ type: 'LIVE_STANCE_SYNC', code: room.code, clientId: me.id, tac, stance: tac.stance, applyTick });
+      } else {
+        if (tac.stance) me.stance = tac.stance;
+        if (tac.style) me.style = tac.style;
+        if (tac.press) me.press = tac.press;
+        if (tac.formation && FORMATIONS[tac.formation]) { me.formation = tac.formation; autoLineup(me); }
+        MatchEngine.profDirty = true;
+        saveRoomAndBroadcast();
+        const curM = activeTourneyMatch();
+        if (curM && !curM.played && !MatchEngine.running) MatchEngine.loadMatch(curM);
+        renderTourney();
+      }
+      syncTacButtons(me, tac);
+    }
+
+    function syncTacButtons(me, pending) {
+      const cur = Object.assign(getMgrTac(me), { formation: (me && me.formation) || '4-3-3' }, pending || {});
+      document.querySelectorAll('#tactics-panel [data-action="set-my-tac"]').forEach(btn => {
+        btn.classList.toggle('active', cur[btn.getAttribute('data-k')] === btn.getAttribute('data-v'));
+      });
+      const fmtSel = document.getElementById('live-formation-select');
+      if (fmtSel && FORMATIONS[cur.formation]) fmtSel.value = cur.formation;
+      const hint = document.getElementById('tac-hint');
+      if (hint) hint.textContent = (TAC_STYLE_HINT[cur.style] || '') + ' ' + (TAC_PRESS_HINT[cur.press] || '');
+    }
+
+    function updateTacHud(m) {
+      const me = myMgr();
+      const adv = document.getElementById('tac-advantage');
+      const stamEl = document.getElementById('tac-stamina');
+      const subsEl = document.getElementById('subs-left');
+      const subBtn = document.getElementById('btn-open-subs');
+      if (!adv || !me || !m) return;
+      const side = m.homeId === me.id ? 'H' : (m.awayId === me.id ? 'A' : null);
+      const E = MatchEngine;
+      if (side && E.edges && E.matchId === m.id) {
+        const op = side === 'H' ? 'A' : 'H';
+        const v = (E.edges[side].atk - E.edges[op].atk) + (E.edges[side].ball - E.edges[op].ball) * 0.5;
+        const pct = Math.round(v * 100);
+        adv.textContent = 'Vantagem tática: ' + (pct > 0 ? '+' : '') + pct + '%';
+        adv.style.color = pct > 3 ? '#10B981' : (pct < -3 ? '#F87171' : 'var(--muted)');
+        const mine = E.discs.filter(d => d.side === side && d.role !== 'GOL');
+        if (mine.length) stamEl.textContent = 'Energia do time: ' + Math.round(mine.reduce((s, d) => s + d.stam, 0) / mine.length) + '%';
+      } else {
+        adv.textContent = 'Vantagem tática: —';
+        adv.style.color = 'var(--muted)';
+        if (stamEl) stamEl.textContent = '';
+      }
+      const used = m.subs && side ? m.subs[side] : 0;
+      if (subsEl) subsEl.textContent = '(' + (MAX_SUBS - used) + ')';
+      if (subBtn) subBtn.disabled = !(side && E.running && !m.played && used < MAX_SUBS);
+    }
+
+    function openSubsModal() {
+      const me = myMgr(); const m = activeTourneyMatch();
+      if (!me || !m || !m.sheet) { toast('Nenhuma partida em andamento.'); return; }
+      const side = m.homeId === me.id ? 'H' : (m.awayId === me.id ? 'A' : null);
+      if (!side) { toast('Você não está jogando esta partida.'); return; }
+      if (!MatchEngine.running || m.played) { toast('Só dá para substituir durante a partida.'); return; }
+      const used = m.subs ? m.subs[side] : 0;
+      if (used >= MAX_SUBS) { toast('Você já fez as ' + MAX_SUBS + ' substituições.'); return; }
+      const field = MatchEngine.discs.filter(d => d.side === side && d.role !== 'GOL').sort((a, b) => a.stam - b.stam);
+      const bench = m.sheet[side].bench.filter(b => !b.used && b.pos !== 'GOL');
+      const stamBar = (s) => `<div class="stam-bar" style="width:56px;"><i style="width:${Math.round(s)}%;background:${s > 66 ? '#22C55E' : (s > 40 ? '#EAB308' : '#EF4444')};"></i></div>`;
+      const fRows = field.map(d => `
+        <button type="button" data-action="sub-pick" data-w="out" data-uid="${esc(d.uid)}" class="w-full flex items-center gap-2 p-2 rounded-lg text-left text-xs ${SubUI.out === d.uid ? 'option-card selected' : 'surface'}">
+          <span class="pos-tag pos-${d.role}">${d.role}</span>
+          <span class="flex-1 font-bold truncate">${esc(d.fullName)}</span>
+          ${stamBar(d.stam)}<span class="w-8 text-right font-bold">${Math.round(d.eff)}</span>${d.yel ? '<span class="ico-yel"></span>' : ''}
+        </button>`).join('');
+      const bRows = bench.map(b => `
+        <button type="button" data-action="sub-pick" data-w="in" data-uid="${esc(b.uid)}" class="w-full flex items-center gap-2 p-2 rounded-lg text-left text-xs ${SubUI.in === b.uid ? 'option-card selected' : 'surface'}">
+          <span class="pos-tag pos-${b.pos}">${b.pos}</span>
+          <span class="flex-1 font-bold truncate">${esc(b.full)}</span>
+          <span class="w-8 text-right font-bold">${b.ovr}</span>
+        </button>`).join('');
+      const ready = SubUI.out && SubUI.in;
+      openModal('Substituições (' + (MAX_SUBS - used) + ' restantes)', `
+        <p class="text-xs" style="color:var(--muted);">Escolha quem sai (energia mais baixa primeiro) e quem entra. O reserva joga na vaga do titular; fora de posição ele rende menos.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="space-y-1.5"><div class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--muted);">Sai</div>${fRows}</div>
+          <div class="space-y-1.5"><div class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--muted);">Entra</div>${bRows || '<div class="text-xs" style="color:var(--muted);">Sem reservas disponíveis.</div>'}</div>
+        </div>
+        <button type="button" data-action="sub-confirm" class="btn-primary w-full py-2.5 text-sm" ${ready ? '' : 'disabled'}>Confirmar substituição</button>`);
+    }
+
+    // Vestiário entre jogos do torneio (escalação e formação antes do apito inicial)
+    function openTourneyLineupModal() {
+      const me = myMgr();
+      if (!me || !room) return;
+      if (MatchEngine.running) { toast('Use o painel tático e substituições com a bola rolando.'); return; }
+      const univ = room.rules.universe || 'BRASIL';
+      const club = getClubObj(me.clubId, univ);
+      const slots = FORMATIONS[me.formation] || FORMATIONS['4-3-3'];
+      if (me.lineupIds.length !== 11) autoLineup(me);
+      const rows = { ATA: [], MEI: [], DEF: [], GOL: [] };
+      slots.forEach((s, i) => {
+        const p = me.roster.find(x => x.uid === me.lineupIds[i]);
+        const entry = { s, p };
+        if (s.role === 'ATA') rows.ATA.push(entry);
+        else if (s.role === 'MEI') rows.MEI.push(entry);
+        else if (s.role === 'GOL') rows.GOL.push(entry);
+        else rows.DEF.push(entry);
+      });
+      const pitchHtml = ['ATA', 'MEI', 'DEF', 'GOL'].map(rk => `
+        <div class="flex items-center justify-around gap-1 z-10 py-1">
+          ${rows[rk].map(({ s, p }) => {
+            if (!p) return '';
+            const eff = slotEffectiveOvr(p, s.role);
+            const imp = eff < p.ovr;
+            const sel = TourneyLineupUI.pickUid === p.uid;
+            return `<button type="button" data-action="tlineup-swap" data-uid="${p.uid}" class="flex flex-col items-center focus:outline-none">
+              <span class="relative w-9 h-9 rounded-full flex items-center justify-center shadow transition ${sel ? 'ring-4 ring-yellow-300 scale-110' : (imp ? 'ring-2 ring-red-400' : 'ring-2 ring-white/90')}" style="background:${club.kitBg}">
+                ${renderClubCrest(club.id, 24, univ)}
+                <span class="absolute -top-1 -right-1.5 px-1 rounded-full text-[9px] font-extrabold bg-[#141A16] text-[#F6C945] border border-white/75">${eff}</span>
+              </span>
+              <span class="mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-black/70 text-white max-w-[78px] truncate">${esc(shortName(p.name))}</span>
+            </button>`;
+          }).join('')}
+        </div>`).join('');
+      const bench = me.roster.filter(p => !me.lineupIds.includes(p.uid)).sort((a, b) => b.ovr - a.ovr);
+      const benchHtml = bench.map(p => `
+        <button type="button" data-action="tlineup-swap" data-uid="${p.uid}" class="row-pick ${TourneyLineupUI.pickUid === p.uid ? 'picked' : ''} w-full px-2.5 py-2 flex items-center justify-between gap-2 text-xs">
+          <span class="flex items-center gap-2 min-w-0"><span class="pos-tag pos-${p.pos}">${p.pos}</span><span class="font-bold truncate">${esc(p.name)}</span></span>
+          <span class="font-extrabold">${p.ovr}</span>
+        </button>`).join('');
+      const fmtOpts = Object.keys(FORMATIONS).map(f => `<option value="${f}" ${f === (me.formation || '4-3-3') ? 'selected' : ''}>${f}</option>`).join('');
+      openModal('Vestiário • ' + club.name + ' (Titular ' + teamAvgOvr(me) + ')', `
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold" style="color:var(--muted);">Formação:</span>
+            <select id="tlineup-fmt-select" class="rounded-lg px-2.5 py-1.5 text-xs font-bold">${fmtOpts}</select>
+          </div>
+          <button type="button" data-action="tlineup-auto" class="btn-secondary px-3 py-1.5 text-xs">Auto-escalar</button>
+        </div>
+        <p class="text-xs" style="color:var(--muted);">Toque em dois jogadores (campo ou banco) para trocar antes do próximo jogo.</p>
+        <div class="mini-pitch p-3 min-h-[290px] flex flex-col justify-between">${pitchHtml}</div>
+        <div class="space-y-1.5">
+          <div class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--muted);">Banco de reservas</div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">${benchHtml}</div>
+        </div>`);
+    }
+
+    // Monta HTML da Súmula FIFA Clássica (usado na Arena ao vivo e no Modal de relatório de jogos encerrados)
+    function buildMatchSheetHtml(m) {
+      if (!m || !m.sheet || !room) return '';
+      const home = room.managers.find(x => x.id === m.homeId), away = room.managers.find(x => x.id === m.awayId);
+      if (!home || !away) return '';
+      const univ = room.rules.universe || 'BRASIL';
+      const hClub = getClubObj(home.clubId, univ), aClub = getClubObj(away.clubId, univ);
+      const ev = m.events || [];
+      const goals = {}, yel = {}, outs = new Set(), ins = new Set();
+      ev.forEach(e => {
+        if (e.t === 'goal') goals[e.uid] = (goals[e.uid] || 0) + 1;
+        if (e.t === 'yellow') yel[e.uid] = true;
+        if (e.t === 'sub') { outs.add(e.outUid); ins.add(e.inUid); }
+      });
+      const icons = (uid) =>
+        (goals[uid] ? '<span title="Gol">' + '⚽'.repeat(goals[uid]) + '</span>' : '') +
+        (yel[uid] ? '<span class="ico-yel" title="Cartão amarelo"></span>' : '');
+      const col = (side, right) => {
+        const sh = m.sheet[side];
+        let rows = '';
+        sh.xi.forEach((p, i) => {
+          const gone = outs.has(p.uid);
+          rows += `<div class="sheet-row ${i % 2 ? 'alt' : ''} ${right ? 'right' : ''} ${gone ? 'subbed-out' : ''}">
+            <span class="num">${p.num}</span>
+            <span class="nm">${esc(p.name)}</span>
+            ${icons(p.uid)}
+            ${gone ? '<span class="ico-down" title="Substituído">▼</span>' : ''}
+          </div>`;
+        });
+        rows += '<div class="sheet-sep">Reservas</div>';
+        sh.bench.forEach((p, i) => {
+          const on = ins.has(p.uid);
+          rows += `<div class="sheet-row ${i % 2 ? 'alt' : ''} ${right ? 'right' : ''} ${on ? '' : 'bench'}">
+            <span class="num">${p.num}</span>
+            <span class="nm">${esc(p.name)}</span>
+            ${icons(p.uid)}
+            ${on ? '<span class="ico-up" title="Entrou em campo">▲</span>' : ''}
+          </div>`;
+        });
+        return `<div class="sheet-col">${rows}</div>`;
+      };
+      const evRows = ev.slice().reverse().map((e, i) => {
+        const team = e.side === 'H' ? hClub.short : aClub.short;
+        let ico, txt;
+        if (e.t === 'goal') { ico = '⚽'; txt = esc(e.name) + ' (' + team + ')'; }
+        else if (e.t === 'yellow') { ico = '<span class="ico-yel"></span>'; txt = esc(e.name) + ' (' + team + ')'; }
+        else if (e.t === 'fmt') { ico = '<span class="ico-tac">✦</span>'; txt = 'Esquema ' + esc(e.fmt) + ' (' + team + ')'; }
+        else { ico = '<span class="ico-up">▲</span>'; txt = esc(e.in) + ' &raquo; ' + esc(e.out) + ' (' + team + ')'; }
+        return `<div class="sheet-ev ${i % 2 ? 'alt' : ''}"><span class="min">${e.min}'</span><span>${ico}</span><span class="truncate">${txt}</span></div>`;
+      }).join('') || '<div class="sheet-ev" style="opacity:.55;">Bola rolando — aguardando lances...</div>';
+
+      const others = (room.tourney.matches || []).filter(o => !o.isBye && o.id !== m.id && o.played).slice(-5).reverse();
+      const latestHtml = others.length ? others.map((o, i) => {
+        const oh = room.managers.find(x => x.id === o.homeId), oa = room.managers.find(x => x.id === o.awayId);
+        const ohc = oh ? getClubObj(oh.clubId, univ) : null, oac = oa ? getClubObj(oa.clubId, univ) : null;
+        return `<div class="sheet-latest-row ${i % 2 ? 'alt' : ''}">
+          <span class="truncate flex-1 text-right">${esc(ohc ? ohc.short : '')}</span>
+          <span class="px-2 py-0.5 rounded bg-white/10 text-white font-extrabold">${o.homeGoals} - ${o.awayGoals}</span>
+          <span class="truncate flex-1 text-left">${esc(oac ? oac.short : '')}</span>
+        </div>`;
+      }).join('') : '<div class="sheet-latest-row" style="opacity:.5; justify-content:center;">Nenhum outro jogo encerrado ainda.</div>';
+
+      const minTxt = m.played ? "90' • Fim" : (MatchEngine.matchId === m.id && MatchEngine.running ? MatchEngine.curMin() + "'" : "00'");
+      const pen = m.played && m.penHome !== null && m.penHome !== undefined ? ` <span class="text-sm font-bold opacity-80">(${m.penHome}-${m.penAway} pên.)</span>` : '';
+      return `
+        <div class="sheet-stage">
+          <div class="sheet">
+            <div class="sheet-grid">
+              <div class="sheet-left">
+                <div class="sheet-head">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <span class="crest-inline" style="width:52px;height:52px;">${crestHtml(hClub)}</span>
+                    <div class="min-w-0">
+                      <div class="font-display text-xl font-extrabold uppercase leading-tight truncate">${esc(hClub.name)}</div>
+                      <div class="text-[11px] text-slate-400 truncate">${esc(home.name)} • ${esc(home.formation || '4-3-3')}</div>
+                    </div>
+                  </div>
+                  <div class="text-center shrink-0">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400">${esc(m.stageName || '')}</div>
+                    <div class="sheet-score">${m.homeGoals} – ${m.awayGoals}${pen}</div>
+                    <div class="text-[11px] text-slate-400 font-semibold">${esc(hClub.short)} vs. ${esc(aClub.short)}</div>
+                  </div>
+                  <div class="flex items-center gap-3 justify-end text-right min-w-0">
+                    <div class="min-w-0">
+                      <div class="font-display text-xl font-extrabold uppercase leading-tight truncate">${esc(aClub.name)}</div>
+                      <div class="text-[11px] text-slate-400 truncate">${esc(away.name)} • ${esc(away.formation || '4-3-3')}</div>
+                    </div>
+                    <span class="crest-inline" style="width:52px;height:52px;">${crestHtml(aClub)}</span>
+                  </div>
+                </div>
+                <div class="sheet-lineups">${col('H', false)}${col('A', true)}</div>
+              </div>
+              <div class="sheet-right">
+                <div class="sheet-clock-bar">${minTxt}</div>
+                <div class="sheet-events">${evRows}</div>
+                <div class="sheet-latest-head">Outros resultados</div>
+                <div class="sheet-latest">${latestHtml}</div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderMatchSheet(m, force) {
+      const el = document.getElementById('match-sheet');
+      if (!el) return;
+      const mode = Client.ui.arenaView || 'HYBRID';
+      if (!m || !m.sheet || !room || mode === 'PITCH') { el.classList.add('hidden'); return; }
+      const ev = m.events || [];
+      const doneCnt = (room.tourney.matches || []).filter(o => o.played).length;
+      const sig = [m.id, m.homeGoals, m.awayGoals, ev.length, m.played ? 1 : 0, m.played ? 99 : MatchEngine.curMin(), doneCnt].join('|');
+      if (!force && el._sig === sig) { el.classList.remove('hidden'); return; }
+      el._sig = sig;
+      el.classList.remove('hidden');
+      el.innerHTML = buildMatchSheetHtml(m);
+    }
+
+    function viewMatchReport(matchId) {
+      if (!room || !room.tourney) return;
+      const m = room.tourney.matches.find(x => x.id === matchId);
+      if (!m || !m.sheet) { toast('Súmula indisponível para este jogo.'); return; }
+      const st = m.stats;
+      let statsHtml = '';
+      if (st) {
+        const totP = (st.possH + st.possA) || 1;
+        const pH = Math.round((st.possH / totP) * 100), pA = 100 - pH;
+        statsHtml = `<div class="grid grid-cols-3 gap-2 text-center text-xs p-3 rounded-xl border" style="background:var(--soft); border-color:var(--line);">
+          <div><div class="font-extrabold text-sm">${pH}% × ${pA}%</div><div class="text-[10px] uppercase tracking-wider" style="color:var(--muted);">Posse</div></div>
+          <div><div class="font-extrabold text-sm">${st.shotsH} (${st.onTgtH}) × ${st.shotsA} (${st.onTgtA})</div><div class="text-[10px] uppercase tracking-wider" style="color:var(--muted);">Chutes (no gol)</div></div>
+          <div><div class="font-extrabold text-sm">${st.tacklesH} × ${st.tacklesA}</div><div class="text-[10px] uppercase tracking-wider" style="color:var(--muted);">Desarmes</div></div>
+        </div>`;
+      }
+      openModal('Súmula oficial • ' + (m.stageName || ''), buildMatchSheetHtml(m) + statsHtml);
     }
 
     function renderTourney() {
@@ -4906,11 +6020,7 @@
         gate.classList.add('hidden');
       }
 
-      if (me) {
-        ['DEFENSIVE', 'BALANCED', 'ATTACK'].forEach(stName => {
-          document.getElementById('mst-' + stName).classList.toggle('active', (me.stance || 'BALANCED') === stName);
-        });
-      }
+      if (me) syncTacButtons(me);
 
       // Standings & Scorers
       const leftEl = document.getElementById('tourney-left-tables');
@@ -4969,12 +6079,13 @@
         const penTxt = m.penHome !== null ? ` (${m.penHome}-${m.penAway} pên.)` : '';
         return `
           <div class="row-pick ${isCurr ? 'picked' : ''} p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-            <span class="text-[11px] font-semibold min-w-[100px]" style="color:var(--muted);">${esc(m.stageName)}</span>
+            <span class="text-[11px] font-semibold min-w-[96px]" style="color:var(--muted);">${esc(m.stageName)}</span>
             <div class="flex-1 flex items-center justify-center gap-2 text-sm">
               <span class="flex items-center justify-end gap-1.5 flex-1 min-w-0 ${winId === m.homeId ? 'font-extrabold' : 'font-medium'}"><span class="truncate">${esc(h ? h.name : '')}</span>${h ? renderClubCrest(h.clubId, 18, univ) : ''}</span>
               <span class="px-2.5 py-0.5 rounded font-extrabold text-xs shrink-0" style="background:var(--soft);">${m.played ? (m.homeGoals + ' - ' + m.awayGoals + penTxt) : (isCurr && !room.tourney.waitingMatchReady ? 'Ao vivo' : 'vs')}</span>
               <span class="flex items-center justify-start gap-1.5 flex-1 min-w-0 ${winId === m.awayId ? 'font-extrabold' : 'font-medium'}">${a ? renderClubCrest(a.clubId, 18, univ) : ''}<span class="truncate">${esc(a ? a.name : '')}</span></span>
             </div>
+            ${m.played && m.sheet ? `<button type="button" data-action="view-match-report" data-mid="${esc(m.id)}" class="btn-secondary px-2 py-1 text-[11px] shrink-0">Súmula</button>` : ''}
           </div>
         `;
       }).join('');
@@ -5427,6 +6538,75 @@
         return;
       }
 
+      if (act === 'set-arena-view') {
+        const v = el.getAttribute('data-view');
+        if (['HYBRID', 'FIFA', 'PITCH'].includes(v)) {
+          Client.ui.arenaView = v;
+          applyArenaView();
+          const m = activeTourneyMatch();
+          if (m) renderMatchSheet(m, true);
+          if (v !== 'FIFA') setTimeout(() => MatchEngine.resize(), 15);
+        }
+        return;
+      }
+
+      if (act === 'tac-preset') {
+        const pr = TAC_PRESETS[el.getAttribute('data-preset')];
+        if (pr) {
+          requestTac({ stance: pr.stance, press: pr.press, style: pr.style });
+          toast('Plano tático: ' + pr.label);
+        }
+        return;
+      }
+
+      if (act === 'open-tourney-lineup') {
+        TourneyLineupUI.pickUid = null;
+        openTourneyLineupModal();
+        return;
+      }
+
+      if (act === 'tlineup-swap') {
+        const me = myMgr();
+        if (!me || MatchEngine.running) return;
+        const uid = el.getAttribute('data-uid');
+        if (!TourneyLineupUI.pickUid) {
+          TourneyLineupUI.pickUid = uid;
+        } else if (TourneyLineupUI.pickUid === uid) {
+          TourneyLineupUI.pickUid = null;
+        } else {
+          const a = TourneyLineupUI.pickUid, b = uid;
+          const ia = me.lineupIds.indexOf(a), ib = me.lineupIds.indexOf(b);
+          if (ia !== -1 && ib !== -1) { me.lineupIds[ia] = b; me.lineupIds[ib] = a; }
+          else if (ia !== -1) me.lineupIds[ia] = b;
+          else if (ib !== -1) me.lineupIds[ib] = a;
+          TourneyLineupUI.pickUid = null;
+          syncMySquadChange();
+          const curM = activeTourneyMatch();
+          if (curM && !curM.played && !MatchEngine.running) { curM.sheet = null; MatchEngine.loadMatch(curM); }
+          renderTourney();
+        }
+        openTourneyLineupModal();
+        return;
+      }
+
+      if (act === 'tlineup-auto') {
+        const me = myMgr();
+        if (!me || MatchEngine.running) return;
+        autoLineup(me);
+        TourneyLineupUI.pickUid = null;
+        syncMySquadChange();
+        const curM = activeTourneyMatch();
+        if (curM && !curM.played && !MatchEngine.running) { curM.sheet = null; MatchEngine.loadMatch(curM); }
+        renderTourney();
+        openTourneyLineupModal();
+        return;
+      }
+
+      if (act === 'view-match-report') {
+        viewMatchReport(el.getAttribute('data-mid'));
+        return;
+      }
+
       if (act === 'host-sim-fast') {
         if (!room) return;
         const m = room.tourney.matches.find(x => x.id === room.tourney.activeMatchId);
@@ -5438,21 +6618,28 @@
       }
 
       if (act === 'set-my-stance') {
-        const me = myMgr();
-        if (me) {
-          const nextSt = el.getAttribute('data-st');
-          if (OnlineNet.isRemoteGuest()) {
-            OnlineNet.sendGuestAction('SET_STANCE', { stance: nextSt });
-            toast('Postura solicitada: ' + (nextSt === 'ATTACK' ? 'Ofensivo' : (nextSt === 'DEFENSIVE' ? 'Retranca' : 'Equilibrado')));
-          } else if (MatchEngine.running) {
-            const applyTick = MatchEngine.ticks + 18;
-            MatchEngine.enqueueStance(me.id, nextSt, applyTick);
-            OnlineNet.broadcastFromHost({ type: 'LIVE_STANCE_SYNC', code: room.code, clientId: me.id, stance: nextSt, applyTick });
-          } else {
-            me.stance = nextSt;
-            saveRoomAndBroadcast();
-            renderTourney();
-          }
+        requestTac({ stance: el.getAttribute('data-st') });
+        return;
+      }
+
+      if (act === 'set-my-tac') {
+        const k = el.getAttribute('data-k'), v = el.getAttribute('data-v');
+        requestTac({ [k]: v });
+        return;
+      }
+
+      if (act === 'open-subs') { openSubsModal(); return; }
+      if (act === 'sub-pick') {
+        SubUI[el.getAttribute('data-w')] = el.getAttribute('data-uid');
+        openSubsModal();
+        return;
+      }
+      if (act === 'sub-confirm') {
+        if (SubUI.out && SubUI.in) {
+          requestTac({ sub: { out: SubUI.out, in: SubUI.in } });
+          SubUI.out = null; SubUI.in = null;
+          closeModal();
+          toast('Substituição pedida: entra em campo em instantes.');
         }
         return;
       }
@@ -5508,6 +6695,19 @@
             autoLineup(me);
             syncMySquadChange();
             renderMarket();
+          }
+        } else if (t.id === 'live-formation-select') {
+          if (FORMATIONS[t.value]) requestTac({ formation: t.value });
+        } else if (t.id === 'tlineup-fmt-select') {
+          const me = myMgr();
+          if (me && FORMATIONS[t.value] && !MatchEngine.running) {
+            me.formation = t.value;
+            autoLineup(me);
+            syncMySquadChange();
+            const curM = activeTourneyMatch();
+            if (curM && !curM.played) { curM.sheet = null; MatchEngine.loadMatch(curM); }
+            renderTourney();
+            openTourneyLineupModal();
           }
         } else if (t.id === 'partner-select') {
           Client.ui.partnerId = t.value;
